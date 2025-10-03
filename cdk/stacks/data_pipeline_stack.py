@@ -56,6 +56,7 @@ class DataPipelineStack(Stack):
         # -------------------------
         # Path pointing to lambda/extractor/.build_layer (expected tree: .build_layer/python/...)
         lambda_layer_path = (HERE.parent.parent / "lambda" / "extractor" / ".build_layer").resolve()
+        lambda_asset_path = (HERE.parent.parent / "lambda" / "extractor").resolve()
 
         layer = None
         if lambda_layer_path.exists() and any(lambda_layer_path.iterdir()):
@@ -74,7 +75,7 @@ class DataPipelineStack(Stack):
         # -------------------------
         # Lambda function with layer attached
         # -------------------------
-        lambda_asset_path = (HERE.parent.parent / "lambda" / "extractor").resolve()
+        
 
         layers_list = [layer] if layer is not None else []
 
