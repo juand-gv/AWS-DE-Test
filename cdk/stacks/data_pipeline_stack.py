@@ -40,6 +40,14 @@ class DataPipelineStack(Stack):
         )
 
         # -------------------------
+        # Registrar S3 location en Lake Formation
+        # -------------------------
+        lf_data_location = lf.CfnResource(self, "LakeFormationDataLocation",
+            resource_arn=f"arn:aws:s3:::{data_bucket.bucket_name}",
+            use_service_linked_role=True
+        )
+
+        # -------------------------
         # Lambda execution role con nombre fijo
         # -------------------------
         lambda_role = iam.Role(self, "LambdaExecutionRole",
@@ -96,7 +104,7 @@ class DataPipelineStack(Stack):
         )
 
         # -------------------------
-        # Glue Crawler
+        # Glue Crawler Role
         # -------------------------
         crawler_role = iam.Role(self, "GlueCrawlerRole",
             role_name="datapipelinestack-GlueCrawlerRole",
@@ -104,25 +112,6 @@ class DataPipelineStack(Stack):
             managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSGlueServiceRole")]
         )
         data_bucket.grant_read(crawler_role)
-
-        glue_crawler = glue.CfnCrawler(self, "UsersCrawler",
-            name="datapipelinestack-UsersCrawler",
-            role=crawler_role.role_arn,
-            database_name=glue_db.ref,
-            targets={"s3Targets": [{"path": f"s3://{data_bucket.bucket_name}/raw/"}]}
-        )
-
-        # -------------------------
-        # Athena Workgroup
-        # -------------------------
-        athena_workgroup = athena.CfnWorkGroup(self, "AthenaWorkgroup",
-            name="datapipelinestack-users-workgroup",
-            work_group_configuration={
-                "resultConfiguration": {
-                    "outputLocation": f"s3://{results_bucket.bucket_name}/athena-results/"
-                }
-            }
-        )
 
         # -------------------------
         # Analytics role
@@ -134,24 +123,102 @@ class DataPipelineStack(Stack):
         )
 
         # -------------------------
-        # Lake Formation permissions
+        # Lake Formation Data Location Permissions
+        # -------------------------
+        lf.CfnPermissions(self, "CrawlerDataLocationPermissions",
+            data_lake_principal={"dataLakePrincipalIdentifier": crawler_role.role_arn},
+            resource={
+                "dataLocationResource": {
+                    "catalogId": self.account,
+                    "s3Resource": f"arn:aws:s3:::{data_bucket.bucket_name}/"
+                }
+            },
+            permissions=["DATA_LOCATION_ACCESS"]
+        )
+
+        lf.CfnPermissions(self, "AnalyticsDataLocationPermissions",
+            data_lake_principal={"dataLakePrincipalIdentifier": analytics_role.role_arn},
+            resource={
+                "dataLocationResource": {
+                    "catalogId": self.account,
+                    "s3Resource": f"arn:aws:s3:::{data_bucket.bucket_name}/"
+                }
+            },
+            permissions=["DATA_LOCATION_ACCESS"]
+        )
+
+        # -------------------------
+        # Lake Formation Database Permissions
         # -------------------------
         lf.CfnPermissions(self, "GlueCrawlerLFPermissions",
             data_lake_principal={"dataLakePrincipalIdentifier": crawler_role.role_arn},
-            resource={"databaseResource": {"name": glue_db.ref}},
+            resource={
+                "databaseResource": {
+                    "catalogId": self.account,
+                    "name": glue_db.ref
+                }
+            },
             permissions=["CREATE_TABLE", "ALTER", "DESCRIBE"]
         )
 
         lf.CfnPermissions(self, "LambdaLFPermissions",
             data_lake_principal={"dataLakePrincipalIdentifier": lambda_role.role_arn},
-            resource={"databaseResource": {"name": glue_db.ref}},
+            resource={
+                "databaseResource": {
+                    "catalogId": self.account,
+                    "name": glue_db.ref
+                }
+            },
             permissions=["DESCRIBE"]
         )
 
-        lf.CfnPermissions(self, "AnalyticsLFPermissions",
+        lf.CfnPermissions(self, "AnalyticsLFDatabasePermissions",
             data_lake_principal={"dataLakePrincipalIdentifier": analytics_role.role_arn},
-            resource={"databaseResource": {"name": glue_db.ref}},
+            resource={
+                "databaseResource": {
+                    "catalogId": self.account,
+                    "name": glue_db.ref
+                }
+            },
+            permissions=["DESCRIBE"]
+        )
+
+        # -------------------------
+        # Lake Formation Table Permissions (para todas las tablas)
+        # -------------------------
+        lf.CfnPermissions(self, "AnalyticsLFTablePermissions",
+            data_lake_principal={"dataLakePrincipalIdentifier": analytics_role.role_arn},
+            resource={
+                "tableResource": {
+                    "catalogId": self.account,
+                    "databaseName": glue_db.ref,
+                    "tableWildcard": {}
+                }
+            },
             permissions=["SELECT", "DESCRIBE"]
+        )
+
+        # -------------------------
+        # Glue Crawler (depende de los permisos de Lake Formation)
+        # -------------------------
+        glue_crawler = glue.CfnCrawler(self, "UsersCrawler",
+            name="datapipelinestack-UsersCrawler",
+            role=crawler_role.role_arn,
+            database_name=glue_db.ref,
+            targets={"s3Targets": [{"path": f"s3://{data_bucket.bucket_name}/raw/"}]}
+        )
+        glue_crawler.add_dependency(lf_data_location)
+
+        # -------------------------
+        # Athena Workgroup
+        # -------------------------
+        athena_workgroup = athena.CfnWorkGroup(self, "AthenaWorkgroup",
+            name="datapipelinestack-users-workgroup",
+            work_group_configuration={
+                "resultConfiguration": {
+                    "outputLocation": f"s3://{results_bucket.bucket_name}/athena-results/"
+                }
+            }
         )
 
         # -------------------------
