@@ -61,7 +61,8 @@ class DataPipelineStack(Stack):
         if lambda_layer_path.exists() and any(lambda_layer_path.iterdir()):
             # only create layer if folder exists and is not empty
             layer = _lambda.LayerVersion(self, "ExtractorDependenciesLayer",
-                code=_lambda.Code.from_asset(str(lambda_layer_path)),
+                # code=_lambda.Code.from_asset(str(lambda_layer_path)),
+                code=_lambda.Code.from_asset(str(lambda_asset_path), exclude=[".build_layer", "tests", "*.md", "requirements.txt"]),
                 compatible_runtimes=[_lambda.Runtime.PYTHON_3_10],
                 description="Dependencies for extractor Lambda (packaged as layer)"
             )
