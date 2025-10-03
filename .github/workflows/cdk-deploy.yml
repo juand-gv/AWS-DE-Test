@@ -1,0 +1,81 @@
+name: CDK Deploy
+
+on:
+  push:
+    branches: ["master"]   # deploy solo en master
+  pull_request:
+    branches: ["main", "master"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+      CDK_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('lambda/extractor/requirements.txt','cdk/requirements.txt') }}
+          restore-keys: |
+            pip-
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      - name: Install Node.js (for CDK)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install CDK CLI
+        run: npm install -g aws-cdk@2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install Python deps for CDK
+        working-directory: ./cdk
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build lambda dependencies for Layer
+        working-directory: ./lambda/extractor
+        run: |
+          python -m pip install --upgrade pip
+          # install dependencies into .build_layer/python so it's directly usable as Lambda Layer root 'python'
+          rm -rf .build_layer || true
+          mkdir -p .build_layer/python
+          pip install -r requirements.txt -t .build_layer/python
+
+      - name: Inspect layer size (debug)
+        run: du -sh lambda/extractor/.build_layer || true
+
+      - name: CDK synth
+        working-directory: ./cdk
+        run: cdk synth
+
+      - name: CDK bootstrap (idempotent)
+        working-directory: ./cdk
+        run: cdk bootstrap aws://$CDK_DEFAULT_ACCOUNT/$CDK_DEFAULT_REGION || true
+
+      - name: CDK deploy (auto-approve)
+        working-directory: ./cdk
+        run: cdk deploy DataPipelineStack --require-approval never
