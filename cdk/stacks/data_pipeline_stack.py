@@ -82,7 +82,7 @@ class DataPipelineStack(Stack):
             runtime=_lambda.Runtime.PYTHON_3_10,
             handler="lambda_function.handler",
             code=_lambda.Code.from_asset(str(lambda_asset_path)),
-            timeout=Duration.minutes(1),
+            timeout=Duration.minutes(2),
             memory_size=512,
             role=lambda_role,
             environment={
