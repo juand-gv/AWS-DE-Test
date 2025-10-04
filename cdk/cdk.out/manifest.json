@@ -15,10 +15,14 @@
       "properties": {
         "templateFile": "DataPipelineStack.template.json",
         "terminationProtection": false,
+        "tags": {
+          "owner": "morbid@example.com",
+          "project": "aws-de-test"
+        },
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::593695448123:role/cdk-hnb659fds-deploy-role-593695448123-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::593695448123:role/cdk-hnb659fds-cfn-exec-role-593695448123-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-593695448123-us-east-1/d9caac456e705b6433857df9ab17f6d89665cc9da32b04deac2e0ccc9f6f8b8b.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-593695448123-us-east-1/230095e2c3173c2b5811881120534452418b349810fc3cd9556065b0126c463b.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -34,6 +38,21 @@
         "DataPipelineStack.assets"
       ],
       "metadata": {
+        "/DataPipelineStack": [
+          {
+            "type": "aws:cdk:stack-tags",
+            "data": [
+              {
+                "Key": "owner",
+                "Value": "morbid@example.com"
+              },
+              {
+                "Key": "project",
+                "Value": "aws-de-test"
+              }
+            ]
+          }
+        ],
         "/DataPipelineStack/DataBucket/Resource": [
           {
             "type": "aws:cdk:logicalId",
@@ -46,6 +65,12 @@
             "data": "AthenaResultsBucket879938FA"
           }
         ],
+        "/DataPipelineStack/LakeFormationDataLocation": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LakeFormationDataLocation"
+          }
+        ],
         "/DataPipelineStack/LambdaExecutionRole/Resource": [
           {
             "type": "aws:cdk:logicalId",
@@ -56,6 +81,12 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "LambdaExecutionRoleDefaultPolicy6D69732F"
+          }
+        ],
+        "/DataPipelineStack/ExtractorDependenciesLayer/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExtractorDependenciesLayerAD891C0F"
           }
         ],
         "/DataPipelineStack/ExtractorLambda/Resource": [
@@ -82,6 +113,48 @@
             "data": "GlueCrawlerRoleDefaultPolicy44958AC9"
           }
         ],
+        "/DataPipelineStack/AnalyticsRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AnalyticsRoleCC82C833"
+          }
+        ],
+        "/DataPipelineStack/CrawlerDataLocationPermissions": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CrawlerDataLocationPermissions"
+          }
+        ],
+        "/DataPipelineStack/AnalyticsDataLocationPermissions": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AnalyticsDataLocationPermissions"
+          }
+        ],
+        "/DataPipelineStack/GlueCrawlerLFPermissions": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GlueCrawlerLFPermissions"
+          }
+        ],
+        "/DataPipelineStack/LambdaLFPermissions": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LambdaLFPermissions"
+          }
+        ],
+        "/DataPipelineStack/AnalyticsLFDatabasePermissions": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AnalyticsLFDatabasePermissions"
+          }
+        ],
+        "/DataPipelineStack/AnalyticsLFTablePermissions": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AnalyticsLFTablePermissions"
+          }
+        ],
         "/DataPipelineStack/UsersCrawler": [
           {
             "type": "aws:cdk:logicalId",
@@ -92,12 +165,6 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "AthenaWorkgroup"
-          }
-        ],
-        "/DataPipelineStack/GlueCrawlerLFPermissions": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "GlueCrawlerLFPermissions"
           }
         ],
         "/DataPipelineStack/DataBucketName": [
@@ -116,6 +183,30 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "AthenaResultsBucketName"
+          }
+        ],
+        "/DataPipelineStack/ExtractorLambdaName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExtractorLambdaName"
+          }
+        ],
+        "/DataPipelineStack/ExtractorLayerArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExtractorLayerArn"
+          }
+        ],
+        "/DataPipelineStack/GlueCrawlerName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GlueCrawlerName"
+          }
+        ],
+        "/DataPipelineStack/AnalyticsRoleArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AnalyticsRoleArn"
           }
         ],
         "/DataPipelineStack/CDKMetadata/Default": [
