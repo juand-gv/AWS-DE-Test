@@ -29,13 +29,15 @@ class DataPipelineStack(Stack):
         data_bucket = s3.Bucket(self, "DataBucket",
             bucket_name="datapipelinestack-data-bucket",
             versioned=True,
-            removal_policy=RemovalPolicy.RETAIN,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
             encryption=s3.BucketEncryption.S3_MANAGED
         )
 
         results_bucket = s3.Bucket(self, "AthenaResultsBucket",
             bucket_name="datapipelinestack-athenaresults-bucket",
-            removal_policy=RemovalPolicy.RETAIN,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
             encryption=s3.BucketEncryption.S3_MANAGED
         )
 
