@@ -22,7 +22,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::593695448123:role/cdk-hnb659fds-deploy-role-593695448123-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::593695448123:role/cdk-hnb659fds-cfn-exec-role-593695448123-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-593695448123-us-east-1/285c17209b149cb19c9870811d4c0d60e870bf778722db35f4294f076e133dbc.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-593695448123-us-east-1/c15cb2281de86ac16f75e6d441c254e24895c3b5e9c5082e5597b8f425e1f94c.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -149,10 +149,56 @@
             "data": "AnalyticsRoleCC82C833"
           }
         ],
-        "/DataPipelineStack/LakeFormationDataLocation": [
+        "/DataPipelineStack/RegisterLFLocationCustom": [
+          {
+            "type": "aws:cdk:warning",
+            "data": "installLatestAwsSdk was not specified, and defaults to true. You probably do not want this. Set the global context flag '@aws-cdk/customresources:installLatestAwsSdkDefault' to false to switch this behavior off project-wide, or set the property explicitly to true if you know you need to call APIs that are not in Lambda's built-in SDK version. [ack: @aws-cdk/custom-resources:installLatestAwsSdkNotSpecified]",
+            "trace": [
+              "Annotations.addMessage (C:\\Users\\morbi\\AppData\\Local\\Temp\\jsii-kernel-jRoMKo\\node_modules\\aws-cdk-lib\\core\\lib\\annotations.js:1:1978)",
+              "Annotations.addWarningV2 (C:\\Users\\morbi\\AppData\\Local\\Temp\\jsii-kernel-jRoMKo\\node_modules\\aws-cdk-lib\\core\\lib\\annotations.js:1:896)",
+              "new AwsCustomResource2 (C:\\Users\\morbi\\AppData\\Local\\Temp\\jsii-kernel-jRoMKo\\node_modules\\aws-cdk-lib\\custom-resources\\lib\\aws-custom-resource\\aws-custom-resource.js:1:5991)",
+              "new AwsCustomResource2 (C:\\Users\\morbi\\AppData\\Local\\Temp\\jsii-kernel-jRoMKo\\node_modules\\aws-cdk-lib\\core\\lib\\prop-injectable.js:1:488)",
+              "Kernel._Kernel_create (C:\\Users\\morbi\\AppData\\Local\\Temp\\tmpqesxp0nw\\lib\\program.js:549:25)",
+              "Kernel.create (C:\\Users\\morbi\\AppData\\Local\\Temp\\tmpqesxp0nw\\lib\\program.js:219:93)",
+              "KernelHost.processRequest (C:\\Users\\morbi\\AppData\\Local\\Temp\\tmpqesxp0nw\\lib\\program.js:15482:36)",
+              "KernelHost.run (C:\\Users\\morbi\\AppData\\Local\\Temp\\tmpqesxp0nw\\lib\\program.js:15442:22)",
+              "Immediate._onImmediate (C:\\Users\\morbi\\AppData\\Local\\Temp\\tmpqesxp0nw\\lib\\program.js:15443:45)",
+              "process.processImmediate (node:internal/timers:485:21)"
+            ]
+          }
+        ],
+        "/DataPipelineStack/RegisterLFLocationCustom/Resource/Default": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "LakeFormationDataLocation"
+            "data": "RegisterLFLocationCustom761D3290"
+          }
+        ],
+        "/DataPipelineStack/RegisterLFLocationCustom/CustomResourcePolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "RegisterLFLocationCustomCustomResourcePolicy6987D61D"
+          }
+        ],
+        "/DataPipelineStack/AWS679f53fac002430cb0da5b7982bd2287": [
+          {
+            "type": "aws:cdk:is-custom-resource-handler-singleton",
+            "data": true
+          },
+          {
+            "type": "aws:cdk:is-custom-resource-handler-runtime-family",
+            "data": 0
+          }
+        ],
+        "/DataPipelineStack/AWS679f53fac002430cb0da5b7982bd2287/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2"
+          }
+        ],
+        "/DataPipelineStack/AWS679f53fac002430cb0da5b7982bd2287/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AWS679f53fac002430cb0da5b7982bd22872D164C4C"
           }
         ],
         "/DataPipelineStack/CrawlerDataLocationPermissions": [

@@ -16,16 +16,31 @@
         }
       }
     },
-    "285c17209b149cb19c9870811d4c0d60e870bf778722db35f4294f076e133dbc": {
+    "34a66902956b031404ef497526f619b900363fe7fd65ff02b1de4c30fe10c034": {
+      "displayName": "AWS679f53fac002430cb0da5b7982bd2287/Code",
+      "source": {
+        "path": "asset.34a66902956b031404ef497526f619b900363fe7fd65ff02b1de4c30fe10c034",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "593695448123-us-east-1-7dd271be": {
+          "bucketName": "cdk-hnb659fds-assets-593695448123-us-east-1",
+          "objectKey": "34a66902956b031404ef497526f619b900363fe7fd65ff02b1de4c30fe10c034.zip",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::593695448123:role/cdk-hnb659fds-file-publishing-role-593695448123-us-east-1"
+        }
+      }
+    },
+    "c15cb2281de86ac16f75e6d441c254e24895c3b5e9c5082e5597b8f425e1f94c": {
       "displayName": "DataPipelineStack Template",
       "source": {
         "path": "DataPipelineStack.template.json",
         "packaging": "file"
       },
       "destinations": {
-        "593695448123-us-east-1-0a2e6772": {
+        "593695448123-us-east-1-5abb52c7": {
           "bucketName": "cdk-hnb659fds-assets-593695448123-us-east-1",
-          "objectKey": "285c17209b149cb19c9870811d4c0d60e870bf778722db35f4294f076e133dbc.json",
+          "objectKey": "c15cb2281de86ac16f75e6d441c254e24895c3b5e9c5082e5597b8f425e1f94c.json",
           "region": "us-east-1",
           "assumeRoleArn": "arn:${AWS::Partition}:iam::593695448123:role/cdk-hnb659fds-file-publishing-role-593695448123-us-east-1"
         }

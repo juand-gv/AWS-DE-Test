@@ -574,27 +574,90 @@
     "aws:cdk:path": "DataPipelineStack/AnalyticsRole/Resource"
    }
   },
-  "LakeFormationDataLocation": {
-   "Type": "AWS::LakeFormation::Resource",
+  "RegisterLFLocationCustom761D3290": {
+   "Type": "Custom::AWS",
    "Properties": {
-    "ResourceArn": {
-     "Fn::Join": [
-      "",
-      [
-       "arn:aws:s3:::",
-       {
-        "Ref": "DataBucketE3889A50"
-       }
-      ]
-     ]
-    },
-    "RoleArn": {
+    "ServiceToken": {
      "Fn::GetAtt": [
-      "GlueCrawlerRole4AA4B387",
+      "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
       "Arn"
      ]
     },
-    "UseServiceLinkedRole": false
+    "Create": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"action\":\"registerResource\",\"service\":\"LakeFormation\",\"parameters\":{\"ResourceArn\":\"arn:aws:s3:::",
+       {
+        "Ref": "DataBucketE3889A50"
+       },
+       "\",\"RoleArn\":\"",
+       {
+        "Fn::GetAtt": [
+         "GlueCrawlerRole4AA4B387",
+         "Arn"
+        ]
+       },
+       "\",\"UseServiceLinkedRole\":false},\"physicalResourceId\":{\"id\":\"lf-register-",
+       {
+        "Ref": "DataBucketE3889A50"
+       },
+       "\"}}"
+      ]
+     ]
+    },
+    "Delete": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"action\":\"deregisterResource\",\"service\":\"LakeFormation\",\"parameters\":{\"ResourceArn\":\"arn:aws:s3:::",
+       {
+        "Ref": "DataBucketE3889A50"
+       },
+       "\"}}"
+      ]
+     ]
+    },
+    "InstallLatestAwsSdk": true
+   },
+   "DependsOn": [
+    "DataBucketAutoDeleteObjectsCustomResource9FB51BF3",
+    "DataBucketPolicy3231C704",
+    "DataBucketE3889A50",
+    "GlueCrawlerRoleDefaultPolicy44958AC9",
+    "GlueCrawlerRole4AA4B387",
+    "RegisterLFLocationCustomCustomResourcePolicy6987D61D"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "DataPipelineStack/RegisterLFLocationCustom/Resource/Default"
+   }
+  },
+  "RegisterLFLocationCustomCustomResourcePolicy6987D61D": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "lakeformation:RegisterResource",
+        "lakeformation:DeregisterResource",
+        "lakeformation:PutDataLakeSettings",
+        "iam:PassRole"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
+    "Roles": [
+     {
+      "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2"
+     }
+    ]
    },
    "DependsOn": [
     "DataBucketAutoDeleteObjectsCustomResource9FB51BF3",
@@ -604,7 +667,88 @@
     "GlueCrawlerRole4AA4B387"
    ],
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/LakeFormationDataLocation"
+    "aws:cdk:path": "DataPipelineStack/RegisterLFLocationCustom/CustomResourcePolicy/Resource"
+   }
+  },
+  "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ],
+    "Tags": [
+     {
+      "Key": "owner",
+      "Value": "morbid@example.com"
+     },
+     {
+      "Key": "project",
+      "Value": "aws-de-test"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DataPipelineStack/AWS679f53fac002430cb0da5b7982bd2287/ServiceRole/Resource"
+   }
+  },
+  "AWS679f53fac002430cb0da5b7982bd22872D164C4C": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-593695448123-us-east-1",
+     "S3Key": "34a66902956b031404ef497526f619b900363fe7fd65ff02b1de4c30fe10c034.zip"
+    },
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs22.x",
+    "Tags": [
+     {
+      "Key": "owner",
+      "Value": "morbid@example.com"
+     },
+     {
+      "Key": "project",
+      "Value": "aws-de-test"
+     }
+    ],
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DataPipelineStack/AWS679f53fac002430cb0da5b7982bd2287/Resource",
+    "aws:asset:path": "asset.34a66902956b031404ef497526f619b900363fe7fd65ff02b1de4c30fe10c034",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
    }
   },
   "CrawlerDataLocationPermissions": {
@@ -630,7 +774,8 @@
    "DependsOn": [
     "GlueCrawlerRoleDefaultPolicy44958AC9",
     "GlueCrawlerRole4AA4B387",
-    "LakeFormationDataLocation"
+    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
+    "RegisterLFLocationCustom761D3290"
    ],
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/CrawlerDataLocationPermissions"
@@ -658,7 +803,8 @@
    },
    "DependsOn": [
     "AnalyticsRoleCC82C833",
-    "LakeFormationDataLocation"
+    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
+    "RegisterLFLocationCustom761D3290"
    ],
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/AnalyticsDataLocationPermissions"
@@ -693,7 +839,8 @@
     "GlueCrawlerRoleDefaultPolicy44958AC9",
     "GlueCrawlerRole4AA4B387",
     "GlueDatabase",
-    "LakeFormationDataLocation"
+    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
+    "RegisterLFLocationCustom761D3290"
    ],
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/GlueCrawlerLFPermissions"
@@ -724,9 +871,10 @@
    },
    "DependsOn": [
     "GlueDatabase",
-    "LakeFormationDataLocation",
     "LambdaExecutionRoleDefaultPolicy6D69732F",
-    "LambdaExecutionRoleD5C26073"
+    "LambdaExecutionRoleD5C26073",
+    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
+    "RegisterLFLocationCustom761D3290"
    ],
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/LambdaLFPermissions"
@@ -758,7 +906,8 @@
    "DependsOn": [
     "AnalyticsRoleCC82C833",
     "GlueDatabase",
-    "LakeFormationDataLocation"
+    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
+    "RegisterLFLocationCustom761D3290"
    ],
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/AnalyticsLFDatabasePermissions"
@@ -791,7 +940,8 @@
    },
    "DependsOn": [
     "AnalyticsLFDatabasePermissions",
-    "LakeFormationDataLocation"
+    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
+    "RegisterLFLocationCustom761D3290"
    ],
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/AnalyticsLFTablePermissions"
@@ -884,7 +1034,7 @@
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/1WOzW6DQAyEnyX3ZRvIKceGqj0WkUOOlVkM2bI/0dpbFK149wpoRHqasecby4Us8qPc72CkTLVDZnQj05lBDQJG+kp0kOkU1YAsys79uVUqb7S6b+t1noQGK1PtDc7Rohv5YAzYpgWZ3qNTrL2bs4efRG8iylR27g0YGqDlUhlgNBjm7oCdDxZmeMFqJB+DWrAKg9VE2juaBPAVHciycxcfho/g420SZST29rmz+X9RFfyPbjGc5g9eiZDPDL12vXguf0a+RZ5Edeerdy8HmRcy3+++SessRMfaoqxX/QUePdrbbQEAAA=="
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/2VPS2+DMAz+Lb2nXoHTji3TdlxVDjtWbmpoRkiq2BmqEP99CiCqaafvYX9+5JBnr7DbYM9bfW231lxgqAR1q7Dn88AFDIeoWxJV1m5hMxy9NfrxtBc9iwMyjcpgB8PJW0pdEz5DMxuVxe5yRRjeo9NivEu1lVfGNZbEr86oGhsJhrJ2byh4QZ5mlwF7S2FUXJyRmYRhn0BZbKn2ocMUhrSWQmeYjXesUG7kMLlfPrQfwcf7qMrI4rsTsY9Bz4ev/E/pGPyPuVJIr6ppWyXYGNeoNaCnwDksmmHf8//5n1HuUUZ1fMjNu5cCshyy3eabjdmG6MR0BKcZfwEGmKHErwEAAA=="
    },
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/CDKMetadata/Default"
