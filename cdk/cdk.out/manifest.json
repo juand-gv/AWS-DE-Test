@@ -22,7 +22,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::593695448123:role/cdk-hnb659fds-deploy-role-593695448123-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::593695448123:role/cdk-hnb659fds-cfn-exec-role-593695448123-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-593695448123-us-east-1/230095e2c3173c2b5811881120534452418b349810fc3cd9556065b0126c463b.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-593695448123-us-east-1/285c17209b149cb19c9870811d4c0d60e870bf778722db35f4294f076e133dbc.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -59,16 +59,52 @@
             "data": "DataBucketE3889A50"
           }
         ],
+        "/DataPipelineStack/DataBucket/Policy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DataBucketPolicy3231C704"
+          }
+        ],
+        "/DataPipelineStack/DataBucket/AutoDeleteObjectsCustomResource/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DataBucketAutoDeleteObjectsCustomResource9FB51BF3"
+          }
+        ],
+        "/DataPipelineStack/Custom::S3AutoDeleteObjectsCustomResourceProvider": [
+          {
+            "type": "aws:cdk:is-custom-resource-handler-customResourceProvider",
+            "data": true
+          }
+        ],
+        "/DataPipelineStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+          }
+        ],
+        "/DataPipelineStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F"
+          }
+        ],
         "/DataPipelineStack/AthenaResultsBucket/Resource": [
           {
             "type": "aws:cdk:logicalId",
             "data": "AthenaResultsBucket879938FA"
           }
         ],
-        "/DataPipelineStack/LakeFormationDataLocation": [
+        "/DataPipelineStack/AthenaResultsBucket/Policy/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "LakeFormationDataLocation"
+            "data": "AthenaResultsBucketPolicyD63DEF63"
+          }
+        ],
+        "/DataPipelineStack/AthenaResultsBucket/AutoDeleteObjectsCustomResource/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AthenaResultsBucketAutoDeleteObjectsCustomResourceD2206C34"
           }
         ],
         "/DataPipelineStack/LambdaExecutionRole/Resource": [
@@ -81,12 +117,6 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "LambdaExecutionRoleDefaultPolicy6D69732F"
-          }
-        ],
-        "/DataPipelineStack/ExtractorDependenciesLayer/Resource": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ExtractorDependenciesLayerAD891C0F"
           }
         ],
         "/DataPipelineStack/ExtractorLambda/Resource": [
@@ -117,6 +147,12 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "AnalyticsRoleCC82C833"
+          }
+        ],
+        "/DataPipelineStack/LakeFormationDataLocation": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LakeFormationDataLocation"
           }
         ],
         "/DataPipelineStack/CrawlerDataLocationPermissions": [
@@ -189,12 +225,6 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "ExtractorLambdaName"
-          }
-        ],
-        "/DataPipelineStack/ExtractorLayerArn": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ExtractorLayerArn"
           }
         ],
         "/DataPipelineStack/GlueCrawlerName": [

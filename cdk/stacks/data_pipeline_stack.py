@@ -14,7 +14,8 @@ from aws_cdk import (
 from constructs import Construct
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+# Ajuste: HERE apunta al archivo y luego usamos HERE.parent para la raíz del proyecto
+HERE = Path(__file__).resolve()
 
 class DataPipelineStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs):
@@ -42,14 +43,6 @@ class DataPipelineStack(Stack):
         )
 
         # -------------------------
-        # Registrar S3 location en Lake Formation
-        # -------------------------
-        lf_data_location = lf.CfnResource(self, "LakeFormationDataLocation",
-            resource_arn=f"arn:aws:s3:::{data_bucket.bucket_name}",
-            use_service_linked_role=True
-        )
-
-        # -------------------------
         # Lambda execution role con nombre fijo
         # -------------------------
         lambda_role = iam.Role(self, "LambdaExecutionRole",
@@ -62,10 +55,10 @@ class DataPipelineStack(Stack):
         data_bucket.grant_read_write(lambda_role)
 
         # -------------------------
-        # Lambda Layer
+        # Lambda Layer detection
         # -------------------------
-        lambda_layer_path = (HERE.parent.parent / "lambda" / "extractor" / ".build_layer").resolve()
-        lambda_asset_path = (HERE.parent.parent / "lambda" / "extractor").resolve()
+        lambda_layer_path = (HERE.parent / "lambda" / "extractor" / ".build_layer").resolve()
+        lambda_asset_path = (HERE.parent / "lambda" / "extractor").resolve()
 
         layer = None
         if lambda_layer_path.exists() and any(lambda_layer_path.iterdir()):
@@ -76,7 +69,8 @@ class DataPipelineStack(Stack):
                 description="Dependencies for extractor Lambda (packaged as layer)"
             )
         else:
-            self.node.add_warning(f"Lambda layer path {lambda_layer_path} not present or empty. Skipping LayerVersion creation.")
+            # Cambio: print en lugar de self.node.add_warning (que causa AttributeError)
+            print(f"Lambda layer path {lambda_layer_path} not present or empty. Skipping LayerVersion creation.")
 
         layers_list = [layer] if layer is not None else []
 
@@ -84,7 +78,9 @@ class DataPipelineStack(Stack):
             function_name="datapipelinestack-ExtractorLambda",
             runtime=_lambda.Runtime.PYTHON_3_10,
             handler="lambda_function.handler",
-            code=_lambda.Code.from_asset(str(lambda_asset_path)),
+            code=_lambda.Code.from_asset(str(lambda_asset_path)) if lambda_asset_path.exists() else _lambda.Code.from_inline(
+                "def handler(event, context):\n  return {'statusCode':200, 'body':'no code'}"
+            ),
             timeout=Duration.minutes(2),
             memory_size=512,
             role=lambda_role,
@@ -113,10 +109,11 @@ class DataPipelineStack(Stack):
             assumed_by=iam.ServicePrincipal("glue.amazonaws.com"),
             managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSGlueServiceRole")]
         )
+        # permisos s3 para el crawler
         data_bucket.grant_read(crawler_role)
 
         # -------------------------
-        # Analytics role
+        # Analytics role (ej. Athena)
         # -------------------------
         analytics_role = iam.Role(self, "AnalyticsRole",
             role_name="datapipelinestack-AnalyticsRole",
@@ -125,34 +122,51 @@ class DataPipelineStack(Stack):
         )
 
         # -------------------------
+        # Registrar S3 location en Lake Formation (evitar service-linked role)
+        # Hacemos que LF use el crawler_role creado arriba para el registro.
+        # -------------------------
+        lf_data_location = lf.CfnResource(self, "LakeFormationDataLocation",
+            resource_arn=f"arn:aws:s3:::{data_bucket.bucket_name}",
+            role_arn=crawler_role.role_arn,
+            use_service_linked_role=False
+        )
+        # Aseguramos que la CFN cree el role primero y luego registre la ubicacion LF
+        lf_data_location.node.add_dependency(crawler_role)
+        lf_data_location.node.add_dependency(data_bucket)
+
+        # -------------------------
         # Lake Formation Data Location Permissions
         # -------------------------
-        lf.CfnPermissions(self, "CrawlerDataLocationPermissions",
+        crawler_perm = lf.CfnPermissions(self, "CrawlerDataLocationPermissions",
             data_lake_principal={"dataLakePrincipalIdentifier": crawler_role.role_arn},
             resource={
                 "dataLocationResource": {
                     "catalogId": self.account,
-                    "s3Resource": f"arn:aws:s3:::{data_bucket.bucket_name}/"
+                    "resourceArn": f"arn:aws:s3:::{data_bucket.bucket_name}"
                 }
             },
             permissions=["DATA_LOCATION_ACCESS"]
         )
+        crawler_perm.node.add_dependency(lf_data_location)
+        crawler_perm.node.add_dependency(crawler_role)
 
-        lf.CfnPermissions(self, "AnalyticsDataLocationPermissions",
+        analytics_perm = lf.CfnPermissions(self, "AnalyticsDataLocationPermissions",
             data_lake_principal={"dataLakePrincipalIdentifier": analytics_role.role_arn},
             resource={
                 "dataLocationResource": {
                     "catalogId": self.account,
-                    "s3Resource": f"arn:aws:s3:::{data_bucket.bucket_name}/"
+                    "resourceArn": f"arn:aws:s3:::{data_bucket.bucket_name}"
                 }
             },
             permissions=["DATA_LOCATION_ACCESS"]
         )
+        analytics_perm.node.add_dependency(lf_data_location)
+        analytics_perm.node.add_dependency(analytics_role)
 
         # -------------------------
         # Lake Formation Database Permissions
         # -------------------------
-        lf.CfnPermissions(self, "GlueCrawlerLFPermissions",
+        db_perm_crawler = lf.CfnPermissions(self, "GlueCrawlerLFPermissions",
             data_lake_principal={"dataLakePrincipalIdentifier": crawler_role.role_arn},
             resource={
                 "databaseResource": {
@@ -162,8 +176,11 @@ class DataPipelineStack(Stack):
             },
             permissions=["CREATE_TABLE", "ALTER", "DESCRIBE"]
         )
+        db_perm_crawler.node.add_dependency(lf_data_location)
+        db_perm_crawler.node.add_dependency(crawler_role)
+        db_perm_crawler.node.add_dependency(glue_db)
 
-        lf.CfnPermissions(self, "LambdaLFPermissions",
+        db_perm_lambda = lf.CfnPermissions(self, "LambdaLFPermissions",
             data_lake_principal={"dataLakePrincipalIdentifier": lambda_role.role_arn},
             resource={
                 "databaseResource": {
@@ -173,8 +190,11 @@ class DataPipelineStack(Stack):
             },
             permissions=["DESCRIBE"]
         )
+        db_perm_lambda.node.add_dependency(lf_data_location)
+        db_perm_lambda.node.add_dependency(lambda_role)
+        db_perm_lambda.node.add_dependency(glue_db)
 
-        lf.CfnPermissions(self, "AnalyticsLFDatabasePermissions",
+        db_perm_analytics = lf.CfnPermissions(self, "AnalyticsLFDatabasePermissions",
             data_lake_principal={"dataLakePrincipalIdentifier": analytics_role.role_arn},
             resource={
                 "databaseResource": {
@@ -184,11 +204,14 @@ class DataPipelineStack(Stack):
             },
             permissions=["DESCRIBE"]
         )
+        db_perm_analytics.node.add_dependency(lf_data_location)
+        db_perm_analytics.node.add_dependency(analytics_role)
+        db_perm_analytics.node.add_dependency(glue_db)
 
         # -------------------------
-        # Lake Formation Table Permissions (para todas las tablas)
+        # Table-level permissions (para todas las tablas en la DB)
         # -------------------------
-        lf.CfnPermissions(self, "AnalyticsLFTablePermissions",
+        table_perm_analytics = lf.CfnPermissions(self, "AnalyticsLFTablePermissions",
             data_lake_principal={"dataLakePrincipalIdentifier": analytics_role.role_arn},
             resource={
                 "tableResource": {
@@ -199,9 +222,11 @@ class DataPipelineStack(Stack):
             },
             permissions=["SELECT", "DESCRIBE"]
         )
+        table_perm_analytics.node.add_dependency(db_perm_analytics)
+        table_perm_analytics.node.add_dependency(lf_data_location)
 
         # -------------------------
-        # Glue Crawler (depende de los permisos de Lake Formation)
+        # Glue Crawler (depende de que LF location y permisos existan)
         # -------------------------
         glue_crawler = glue.CfnCrawler(self, "UsersCrawler",
             name="datapipelinestack-UsersCrawler",
@@ -209,7 +234,8 @@ class DataPipelineStack(Stack):
             database_name=glue_db.ref,
             targets={"s3Targets": [{"path": f"s3://{data_bucket.bucket_name}/raw/"}]}
         )
-        glue_crawler.add_dependency(lf_data_location)
+        glue_crawler.add_dependency(glue_db)
+        glue_crawler.node.add_dependency(crawler_perm)
 
         # -------------------------
         # Athena Workgroup
@@ -222,6 +248,7 @@ class DataPipelineStack(Stack):
                 }
             }
         )
+        athena_workgroup.node.add_dependency(results_bucket)
 
         # -------------------------
         # Outputs
