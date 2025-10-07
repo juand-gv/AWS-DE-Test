@@ -1,53 +1,37 @@
 from aws_cdk import (
+    Stack,
+    Duration,
+    RemovalPolicy,
     aws_s3 as s3,
     aws_lambda as _lambda,
     aws_iam as iam,
     aws_glue as glue,
     aws_athena as athena,
     aws_lakeformation as lf,
-    custom_resources as cr,
-    Duration,
-    RemovalPolicy,
-    Stack,
-    CfnOutput,
-    Tags,
+    CfnOutput
 )
 from constructs import Construct
-from pathlib import Path
-
-# Ajuste: HERE apunta al archivo y luego usamos HERE.parent para la raíz del proyecto
-HERE = Path(__file__).resolve()
+import os
 
 class DataPipelineStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, **kwargs):
-        super().__init__(scope, construct_id, **kwargs)
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
 
-        Tags.of(self).add("project", "aws-de-test")
-        Tags.of(self).add("owner", "morbid@example.com")
-
-        # -------------------------
-        # Buckets con nombre fijo
-        # -------------------------
+        # --- S3 ---
         data_bucket = s3.Bucket(self, "DataBucket",
-            bucket_name="datapipelinestack-data-bucket",
-            versioned=True,
-            removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
-            encryption=s3.BucketEncryption.S3_MANAGED
+            removal_policy=RemovalPolicy.DESTROY,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL
         )
 
-        results_bucket = s3.Bucket(self, "AthenaResultsBucket",
-            bucket_name="datapipelinestack-athenaresults-bucket",
-            removal_policy=RemovalPolicy.DESTROY,
+        results_bucket = s3.Bucket(self, "AthenaResults",
             auto_delete_objects=True,
-            encryption=s3.BucketEncryption.S3_MANAGED
+            removal_policy=RemovalPolicy.DESTROY,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL
         )
 
-        # -------------------------
-        # Lambda execution role con nombre fijo
-        # -------------------------
-        lambda_role = iam.Role(self, "LambdaExecutionRole",
-            role_name="datapipelinestack-ExtractorLambdaRole",
+        # --- Lambda ---
+        lambda_role = iam.Role(self, "LambdaRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com")
         )
         lambda_role.add_managed_policy(
@@ -55,240 +39,88 @@ class DataPipelineStack(Stack):
         )
         data_bucket.grant_read_write(lambda_role)
 
-        # -------------------------
-        # Lambda Layer detection
-        # -------------------------
-        lambda_layer_path = (HERE.parent / "lambda" / "extractor" / ".build_layer").resolve()
-        lambda_asset_path = (HERE.parent / "lambda" / "extractor").resolve()
-
-        layer = None
-        if lambda_layer_path.exists() and any(lambda_layer_path.iterdir()):
-            layer = _lambda.LayerVersion(self, "ExtractorDependenciesLayer",
-                layer_version_name="datapipelinestack-ExtractorLayer",
-                code=_lambda.Code.from_asset(str(lambda_asset_path), exclude=[".build_layer", "tests", "*.md", "requirements.txt"]),
-                compatible_runtimes=[_lambda.Runtime.PYTHON_3_10],
-                description="Dependencies for extractor Lambda (packaged as layer)"
-            )
-        else:
-            # Cambio: print en lugar de self.node.add_warning (que causa AttributeError)
-            print(f"Lambda layer path {lambda_layer_path} not present or empty. Skipping LayerVersion creation.")
-
-        layers_list = [layer] if layer is not None else []
-
-        extractor_fn = _lambda.Function(self, "ExtractorLambda",
-            function_name="datapipelinestack-ExtractorLambda",
+        extractor = _lambda.Function(self, "ExtractorFunction",
             runtime=_lambda.Runtime.PYTHON_3_10,
             handler="lambda_function.handler",
-            code=_lambda.Code.from_asset(str(lambda_asset_path)) if lambda_asset_path.exists() else _lambda.Code.from_inline(
-                "def handler(event, context):\n  return {'statusCode':200, 'body':'no code'}"
-            ),
-            timeout=Duration.minutes(2),
-            memory_size=512,
-            role=lambda_role,
+            code=_lambda.Code.from_asset("../lambda/extractor"),
+            timeout=Duration.minutes(1),
             environment={
                 "BUCKET": data_bucket.bucket_name,
-                "PREFIX": "raw/",
                 "API_URL": "https://randomuser.me/api/?results=100",
                 "FILE_FORMAT": "parquet"
             },
-            layers=layers_list
+            role=lambda_role
         )
 
-        # -------------------------
-        # Glue DB con nombre fijo
-        # -------------------------
-        glue_db = glue.CfnDatabase(self, "GlueDatabase",
+        # --- Glue ---
+        glue_db = glue.CfnDatabase(self, "GlueDB",
             catalog_id=self.account,
             database_input={"name": "users_db"}
         )
 
-        # -------------------------
-        # Glue Crawler Role
-        # -------------------------
-        crawler_role = iam.Role(self, "GlueCrawlerRole",
-            role_name="datapipelinestack-GlueCrawlerRole",
+        crawler_role = iam.Role(self, "CrawlerRole",
             assumed_by=iam.ServicePrincipal("glue.amazonaws.com"),
-            managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSGlueServiceRole")]
-        )
-        # permisos s3 para el crawler
-        data_bucket.grant_read(crawler_role)
-
-        # -------------------------
-        # Analytics role (ej. Athena)
-        # -------------------------
-        analytics_role = iam.Role(self, "AnalyticsRole",
-            role_name="datapipelinestack-AnalyticsRole",
-            assumed_by=iam.ServicePrincipal("athena.amazonaws.com"),
-            description="Role representing analytics users / Athena queries for Lake Formation permissions"
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name("AdministratorAccess")
+            ]
         )
 
-        # -------------------------
-        # 100% IaC: Custom Resource que registra/deregistra la Data Location en Lake Formation
-        # -------------------------
-        register_policy_statement = iam.PolicyStatement(
-            actions=[
-                "lakeformation:RegisterResource",
-                "lakeformation:DeregisterResource",
-                "lakeformation:PutDataLakeSettings",
-                "iam:PassRole"
-            ],
-            resources=["*"],
-            effect=iam.Effect.ALLOW
+
+        lf.CfnDataLakeSettings(
+            self, "DataPipelineDataLakeSettings",
+            admins=[
+                lf.CfnDataLakeSettings.DataLakePrincipalProperty(
+                    data_lake_principal_identifier=crawler_role.role_arn
+                )
+            ]
         )
 
-        register_policy = cr.AwsCustomResourcePolicy.from_statements([register_policy_statement])
-
-        register_call = cr.AwsCustomResource(self, "RegisterLFLocationCustom",
-            on_create=cr.AwsSdkCall(
-                service="LakeFormation",
-                action="registerResource",
-                parameters={
-                    "ResourceArn": f"arn:aws:s3:::{data_bucket.bucket_name}",
-                    "RoleArn": crawler_role.role_arn,
-                    "UseServiceLinkedRole": False
-                },
-                physical_resource_id=cr.PhysicalResourceId.of(f"lf-register-{data_bucket.bucket_name}")
-            ),
-            on_delete=cr.AwsSdkCall(
-                service="LakeFormation",
-                action="deregisterResource",
-                parameters={"ResourceArn": f"arn:aws:s3:::{data_bucket.bucket_name}"}
-            ),
-            policy=register_policy,
-            timeout=Duration.minutes(5)
-        )
-
-        # Asegura que el role y el bucket existan antes de registrar
-        register_call.node.add_dependency(crawler_role)
-        register_call.node.add_dependency(data_bucket)
-
-        # -------------------------
-        # Registrar S3 location en Lake Formation (CfnResource removed in favor of AwsCustomResource)
-        # -------------------------
-        # -------------------------
-        # Lake Formation Data Location Permissions
-        # -------------------------
-        crawler_perm = lf.CfnPermissions(self, "CrawlerDataLocationPermissions",
+        lf.CfnPermissions(self, "GlueDBPerms",
             data_lake_principal={"dataLakePrincipalIdentifier": crawler_role.role_arn},
-            resource={
-                "dataLocationResource": {
-                    "catalogId": self.account,
-                    "resourceArn": f"arn:aws:s3:::{data_bucket.bucket_name}"
-                }
-            },
-            permissions=["DATA_LOCATION_ACCESS"]
-        )
-        crawler_perm.node.add_dependency(register_call)
-        crawler_perm.node.add_dependency(crawler_role)
-
-        analytics_perm = lf.CfnPermissions(self, "AnalyticsDataLocationPermissions",
-            data_lake_principal={"dataLakePrincipalIdentifier": analytics_role.role_arn},
-            resource={
-                "dataLocationResource": {
-                    "catalogId": self.account,
-                    "resourceArn": f"arn:aws:s3:::{data_bucket.bucket_name}"
-                }
-            },
-            permissions=["DATA_LOCATION_ACCESS"]
-        )
-        analytics_perm.node.add_dependency(register_call)
-        analytics_perm.node.add_dependency(analytics_role)
-
-        # -------------------------
-        # Lake Formation Database Permissions
-        # -------------------------
-        db_perm_crawler = lf.CfnPermissions(self, "GlueCrawlerLFPermissions",
-            data_lake_principal={"dataLakePrincipalIdentifier": crawler_role.role_arn},
-            resource={
-                "databaseResource": {
-                    "catalogId": self.account,
-                    "name": glue_db.ref
-                }
-            },
+            resource={"databaseResource": {"name": "users_db"}},
             permissions=["CREATE_TABLE", "ALTER", "DESCRIBE"]
         )
-        db_perm_crawler.node.add_dependency(register_call)
-        db_perm_crawler.node.add_dependency(crawler_role)
-        db_perm_crawler.node.add_dependency(glue_db)
 
-        db_perm_lambda = lf.CfnPermissions(self, "LambdaLFPermissions",
-            data_lake_principal={"dataLakePrincipalIdentifier": lambda_role.role_arn},
-            resource={
-                "databaseResource": {
-                    "catalogId": self.account,
-                    "name": glue_db.ref
-                }
-            },
-            permissions=["DESCRIBE"]
-        )
-        db_perm_lambda.node.add_dependency(register_call)
-        db_perm_lambda.node.add_dependency(lambda_role)
-        db_perm_lambda.node.add_dependency(glue_db)
+        
+        data_bucket.grant_read(crawler_role)
 
-        db_perm_analytics = lf.CfnPermissions(self, "AnalyticsLFDatabasePermissions",
-            data_lake_principal={"dataLakePrincipalIdentifier": analytics_role.role_arn},
-            resource={
-                "databaseResource": {
-                    "catalogId": self.account,
-                    "name": glue_db.ref
-                }
-            },
-            permissions=["DESCRIBE"]
-        )
-        db_perm_analytics.node.add_dependency(register_call)
-        db_perm_analytics.node.add_dependency(analytics_role)
-        db_perm_analytics.node.add_dependency(glue_db)
-
-        # -------------------------
-        # Table-level permissions (para todas las tablas en la DB)
-        # -------------------------
-        table_perm_analytics = lf.CfnPermissions(self, "AnalyticsLFTablePermissions",
-            data_lake_principal={"dataLakePrincipalIdentifier": analytics_role.role_arn},
-            resource={
-                "tableResource": {
-                    "catalogId": self.account,
-                    "databaseName": glue_db.ref,
-                    "tableWildcard": {}
-                }
-            },
-            permissions=["SELECT", "DESCRIBE"]
-        )
-        table_perm_analytics.node.add_dependency(db_perm_analytics)
-        table_perm_analytics.node.add_dependency(register_call)
-
-        # -------------------------
-        # Glue Crawler (depende de que LF location y permisos existan)
-        # -------------------------
-        glue_crawler = glue.CfnCrawler(self, "UsersCrawler",
-            name="datapipelinestack-UsersCrawler",
+        glue.CfnCrawler(self, "UsersCrawler",
             role=crawler_role.role_arn,
             database_name=glue_db.ref,
-            targets={"s3Targets": [{"path": f"s3://{data_bucket.bucket_name}/raw/"}]}
+            targets={"s3Targets": [{"path": f"s3://{data_bucket.bucket_name}/"}]},
+            schema_change_policy={"deleteBehavior": "LOG", "updateBehavior": "UPDATE_IN_DATABASE"}
         )
-        glue_crawler.add_dependency(glue_db)
-        glue_crawler.node.add_dependency(crawler_perm)
 
-        # -------------------------
-        # Athena Workgroup
-        # -------------------------
-        athena_workgroup = athena.CfnWorkGroup(self, "AthenaWorkgroup",
-            name="datapipelinestack-users-workgroup",
+        # --- Lake Formation ---
+        lf.CfnResource(self, "LFDataLocation",
+            resource_arn=data_bucket.bucket_arn,
+            use_service_linked_role=False,
+            role_arn=crawler_role.role_arn
+        )
+
+        lf.CfnPermissions(self, "CrawlerPerms",
+            data_lake_principal={"dataLakePrincipalIdentifier": crawler_role.role_arn},
+            resource={"databaseResource": {"name": "users_db"}},
+            permissions=["ALL"]
+        )
+
+        lf.CfnPermissions(self, "LambdaPerms",
+            data_lake_principal={"dataLakePrincipalIdentifier": crawler_role.role_arn},
+            resource={"dataLocationResource": {"s3Resource": data_bucket.bucket_arn}},
+            permissions=["DATA_LOCATION_ACCESS"]
+        )
+
+        # --- Athena ---
+        athena.CfnWorkGroup(self, "AthenaWG",
+            name="users_wg",
             work_group_configuration={
                 "resultConfiguration": {
-                    "outputLocation": f"s3://{results_bucket.bucket_name}/athena-results/"
+                    "outputLocation": f"s3://{results_bucket.bucket_name}/results/"
                 }
             }
         )
-        athena_workgroup.node.add_dependency(results_bucket)
 
-        # -------------------------
-        # Outputs
-        # -------------------------
-        CfnOutput(self, "DataBucketName", value=data_bucket.bucket_name)
-        CfnOutput(self, "GlueDatabaseName", value=glue_db.ref)
-        CfnOutput(self, "AthenaResultsBucketName", value=results_bucket.bucket_name)
-        CfnOutput(self, "ExtractorLambdaName", value=extractor_fn.function_name)
-        if layer is not None:
-            CfnOutput(self, "ExtractorLayerArn", value=layer.layer_version_arn)
-        CfnOutput(self, "GlueCrawlerName", value=glue_crawler.ref)
-        CfnOutput(self, "AnalyticsRoleArn", value=analytics_role.role_arn)
+        # --- Outputs ---
+        CfnOutput(self, "DataBucketNameOutput", value=data_bucket.bucket_name)
+        CfnOutput(self, "GlueDBNameOutput", value="users_db")
+        CfnOutput(self, "LambdaNameOutput", value=extractor.function_name)
