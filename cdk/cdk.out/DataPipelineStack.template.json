@@ -265,18 +265,21 @@
   "DepsLayerA0D7F79A": {
    "Type": "AWS::Lambda::LayerVersion",
    "Properties": {
+    "CompatibleArchitectures": [
+     "arm64"
+    ],
     "CompatibleRuntimes": [
      "python3.12"
     ],
     "Content": {
      "S3Bucket": "cdk-hnb659fds-assets-339712743071-us-east-1",
-     "S3Key": "81ddcad0c68dbe9c920d77ca3fb4155a7cdd9033a2aa708525b133f0b003e9b6.zip"
+     "S3Key": "eda857b3f450629a8bff9fd366846b2ee6bdb013772947361f1cc0e41fa78249.zip"
     },
     "Description": "Prebuilt deps (requests, pyarrow, etc.)"
    },
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/DepsLayer/Resource",
-    "aws:asset:path": "asset.81ddcad0c68dbe9c920d77ca3fb4155a7cdd9033a2aa708525b133f0b003e9b6.zip",
+    "aws:asset:path": "asset.eda857b3f450629a8bff9fd366846b2ee6bdb013772947361f1cc0e41fa78249.zip",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Content"
    }
@@ -374,9 +377,12 @@
   "ExtractorFunctionBA5D720D": {
    "Type": "AWS::Lambda::Function",
    "Properties": {
+    "Architectures": [
+     "arm64"
+    ],
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-339712743071-us-east-1",
-     "S3Key": "9139a3bf5a007bc516f3448f42a8050cd9456943927e23b4fe6d3a62223e3cd3.zip"
+     "S3Key": "bb7161eed68f1faf61352d89ae3eaa63c4cb7af0c20beac845a9c8eefbd0e020.zip"
     },
     "Environment": {
      "Variables": {
@@ -408,7 +414,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/ExtractorFunction/Resource",
-    "aws:asset:path": "asset.9139a3bf5a007bc516f3448f42a8050cd9456943927e23b4fe6d3a62223e3cd3",
+    "aws:asset:path": "asset.bb7161eed68f1faf61352d89ae3eaa63c4cb7af0c20beac845a9c8eefbd0e020",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
