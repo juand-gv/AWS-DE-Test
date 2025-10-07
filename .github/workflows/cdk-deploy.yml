@@ -1,135 +1,135 @@
-name: CDK Deploy
+# name: CDK Deploy
 
-on:
-  push:
-    branches: ["master"]   # deploy solo después del merge a master
-  pull_request:
-    branches: ["main", "master"]  # validación en PR (sin deploy)
+# on:
+#   push:
+#     branches: ["master"]   # deploy solo después del merge a master
+#   pull_request:
+#     branches: ["main", "master"]  # validación en PR (sin deploy)
 
-permissions:
-  contents: read
-  id-token: write
+# permissions:
+#   contents: read
+#   id-token: write
 
-jobs:
-  # Job de validación que corre en PRs
-  validate:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    env:
-      CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
-      CDK_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+# jobs:
+#   # Job de validación que corre en PRs
+#   validate:
+#     if: github.event_name == 'pull_request'
+#     runs-on: ubuntu-latest
+#     env:
+#       CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+#       CDK_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
 
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ hashFiles('lambda/extractor/requirements.txt','cdk/requirements.txt') }}
-          restore-keys: |
-            pip-
+#       - name: Cache pip
+#         uses: actions/cache@v4
+#         with:
+#           path: ~/.cache/pip
+#           key: pip-${{ hashFiles('lambda/extractor/requirements.txt','cdk/requirements.txt') }}
+#           restore-keys: |
+#             pip-
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10.13"
+#       - name: Set up Python 3.10
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: "3.10.13"
 
-      - name: Install Node.js (for CDK)
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+#       - name: Install Node.js (for CDK)
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
 
-      - name: Install CDK CLI
-        run: npm install -g aws-cdk@2
+#       - name: Install CDK CLI
+#         run: npm install -g aws-cdk@2
 
-      - name: Install Python deps for CDK
-        working-directory: ./cdk
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+#       - name: Install Python deps for CDK
+#         working-directory: ./cdk
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install -r requirements.txt
 
-      - name: Build lambda dependencies for Layer
-        working-directory: ./lambda/extractor
-        run: |
-          python -m pip install --upgrade pip
-          rm -rf .build_layer || true
-          mkdir -p .build_layer/python
-          pip install -r requirements.txt -t .build_layer/python
+#       - name: Build lambda dependencies for Layer
+#         working-directory: ./lambda/extractor
+#         run: |
+#           python -m pip install --upgrade pip
+#           rm -rf .build_layer || true
+#           mkdir -p .build_layer/python
+#           pip install -r requirements.txt -t .build_layer/python
 
-      - name: Inspect layer size (debug)
-        run: du -sh lambda/extractor/.build_layer || true
+#       - name: Inspect layer size (debug)
+#         run: du -sh lambda/extractor/.build_layer || true
 
-      - name: CDK synth (validación)
-        working-directory: ./cdk
-        run: cdk synth
+#       - name: CDK synth (validación)
+#         working-directory: ./cdk
+#         run: cdk synth
 
-  # Job de deploy que solo corre después del merge a master
-  deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    env:
-      CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
-      CDK_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+#   # Job de deploy que solo corre después del merge a master
+#   deploy:
+#     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+#     runs-on: ubuntu-latest
+#     env:
+#       CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+#       CDK_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
 
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ hashFiles('lambda/extractor/requirements.txt','cdk/requirements.txt') }}
-          restore-keys: |
-            pip-
+#       - name: Cache pip
+#         uses: actions/cache@v4
+#         with:
+#           path: ~/.cache/pip
+#           key: pip-${{ hashFiles('lambda/extractor/requirements.txt','cdk/requirements.txt') }}
+#           restore-keys: |
+#             pip-
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10.13"
+#       - name: Set up Python 3.10
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: "3.10.13"
 
-      - name: Install Node.js (for CDK)
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+#       - name: Install Node.js (for CDK)
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
 
-      - name: Install CDK CLI
-        run: npm install -g aws-cdk@2
+#       - name: Install CDK CLI
+#         run: npm install -g aws-cdk@2
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v3
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Install Python deps for CDK
-        working-directory: ./cdk
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+#       - name: Install Python deps for CDK
+#         working-directory: ./cdk
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install -r requirements.txt
 
-      - name: Build lambda dependencies for Layer
-        working-directory: ./lambda/extractor
-        run: |
-          python -m pip install --upgrade pip
-          rm -rf .build_layer || true
-          mkdir -p .build_layer/python
-          pip install -r requirements.txt -t .build_layer/python
+#       - name: Build lambda dependencies for Layer
+#         working-directory: ./lambda/extractor
+#         run: |
+#           python -m pip install --upgrade pip
+#           rm -rf .build_layer || true
+#           mkdir -p .build_layer/python
+#           pip install -r requirements.txt -t .build_layer/python
 
-      - name: Inspect layer size (debug)
-        run: du -sh lambda/extractor/.build_layer || true
+#       - name: Inspect layer size (debug)
+#         run: du -sh lambda/extractor/.build_layer || true
 
-      - name: CDK synth
-        working-directory: ./cdk
-        run: cdk synth
+#       - name: CDK synth
+#         working-directory: ./cdk
+#         run: cdk synth
 
-      - name: CDK bootstrap
-        working-directory: ./cdk
-        run: cdk bootstrap aws://$CDK_DEFAULT_ACCOUNT/$CDK_DEFAULT_REGION || true
+#       - name: CDK bootstrap
+#         working-directory: ./cdk
+#         run: cdk bootstrap aws://$CDK_DEFAULT_ACCOUNT/$CDK_DEFAULT_REGION || true
 
-      - name: CDK deploy (auto-approve)
-        working-directory: ./cdk
-        run: cdk deploy DataPipelineStack --require-approval never
+#       - name: CDK deploy (auto-approve)
+#         working-directory: ./cdk
+#         run: cdk deploy DataPipelineStack --require-approval never
