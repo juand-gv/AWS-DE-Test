@@ -34,6 +34,7 @@ class DataPipelineStack(Stack):
             self, "DepsLayer",
             code=_lambda.Code.from_asset("../python.zip"),
             compatible_runtimes=[_lambda.Runtime.PYTHON_3_12],
+            compatible_architectures=[_lambda.Architecture.ARM_64],
             description="Prebuilt deps (requests, pyarrow, etc.)"
         )
 
@@ -47,6 +48,7 @@ class DataPipelineStack(Stack):
 
         extractor = _lambda.Function(self, "ExtractorFunction",
             runtime=_lambda.Runtime.PYTHON_3_12,
+            architecture=_lambda.Architecture.ARM_64,
             handler="lambda_function.handler",
             code=_lambda.Code.from_asset("../lambda/extractor"),
             timeout=Duration.minutes(1),
