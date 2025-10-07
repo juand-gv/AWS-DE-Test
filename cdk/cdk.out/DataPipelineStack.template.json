@@ -128,7 +128,7 @@
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-593695448123-us-east-1",
+     "S3Bucket": "cdk-hnb659fds-assets-339712743071-us-east-1",
      "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
     },
     "Timeout": 900,
@@ -262,6 +262,25 @@
     "aws:cdk:path": "DataPipelineStack/AthenaResults/AutoDeleteObjectsCustomResource/Default"
    }
   },
+  "DepsLayerA0D7F79A": {
+   "Type": "AWS::Lambda::LayerVersion",
+   "Properties": {
+    "CompatibleRuntimes": [
+     "python3.12"
+    ],
+    "Content": {
+     "S3Bucket": "cdk-hnb659fds-assets-339712743071-us-east-1",
+     "S3Key": "81ddcad0c68dbe9c920d77ca3fb4155a7cdd9033a2aa708525b133f0b003e9b6.zip"
+    },
+    "Description": "Prebuilt deps (requests, pyarrow, etc.)"
+   },
+   "Metadata": {
+    "aws:cdk:path": "DataPipelineStack/DepsLayer/Resource",
+    "aws:asset:path": "asset.81ddcad0c68dbe9c920d77ca3fb4155a7cdd9033a2aa708525b133f0b003e9b6.zip",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Content"
+   }
+  },
   "LambdaRole3A44B857": {
    "Type": "AWS::IAM::Role",
    "Properties": {
@@ -356,8 +375,8 @@
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-593695448123-us-east-1",
-     "S3Key": "52dcdc7ef3213e8a495ca8d3fea5ca2a847d352343d884750456fe10eceab63b.zip"
+     "S3Bucket": "cdk-hnb659fds-assets-339712743071-us-east-1",
+     "S3Key": "9139a3bf5a007bc516f3448f42a8050cd9456943927e23b4fe6d3a62223e3cd3.zip"
     },
     "Environment": {
      "Variables": {
@@ -369,13 +388,18 @@
      }
     },
     "Handler": "lambda_function.handler",
+    "Layers": [
+     {
+      "Ref": "DepsLayerA0D7F79A"
+     }
+    ],
     "Role": {
      "Fn::GetAtt": [
       "LambdaRole3A44B857",
       "Arn"
      ]
     },
-    "Runtime": "python3.10",
+    "Runtime": "python3.12",
     "Timeout": 60
    },
    "DependsOn": [
@@ -384,7 +408,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/ExtractorFunction/Resource",
-    "aws:asset:path": "asset.52dcdc7ef3213e8a495ca8d3fea5ca2a847d352343d884750456fe10eceab63b",
+    "aws:asset:path": "asset.9139a3bf5a007bc516f3448f42a8050cd9456943927e23b4fe6d3a62223e3cd3",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -392,7 +416,7 @@
   "GlueDB": {
    "Type": "AWS::Glue::Database",
    "Properties": {
-    "CatalogId": "593695448123",
+    "CatalogId": "339712743071",
     "DatabaseInput": {
      "Name": "users_db"
     }
@@ -612,13 +636,42 @@
     "aws:cdk:path": "DataPipelineStack/CrawlerPerms"
    }
   },
-  "LambdaPerms": {
+  "CrawlerPermst": {
    "Type": "AWS::LakeFormation::Permissions",
    "Properties": {
     "DataLakePrincipal": {
      "DataLakePrincipalIdentifier": {
       "Fn::GetAtt": [
        "CrawlerRoleA9495AEE",
+       "Arn"
+      ]
+     }
+    },
+    "Permissions": [
+     "DATA_LOCATION_ACCESS"
+    ],
+    "Resource": {
+     "DataLocationResource": {
+      "S3Resource": {
+       "Fn::GetAtt": [
+        "DataBucketE3889A50",
+        "Arn"
+       ]
+      }
+     }
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DataPipelineStack/CrawlerPermst"
+   }
+  },
+  "LambdaPerms": {
+   "Type": "AWS::LakeFormation::Permissions",
+   "Properties": {
+    "DataLakePrincipal": {
+     "DataLakePrincipalIdentifier": {
+      "Fn::GetAtt": [
+       "LambdaRole3A44B857",
        "Arn"
       ]
      }
@@ -669,7 +722,7 @@
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/11Py26DMBD8ltyNG+DUY0PVXioVwaHHaDELcQ125F0XRRb/XgFJE/U0M7sz+8hklj7L/Q4mSlRrkkE3MtYMygiY6Bgpl/EQlEEWRWevbIPSDVpd7uWr3sQBCGehYZSxcgMurhXvoY3NYoCxaUHGt2AVa2eX3o3PgvIjECGTfFlA9ENAGYvOvgJDA7ROLjxMA/pllsHO+RGW8J/tAwzWyKxtT+tm9KMm0s6uskJywSucBfAJLciis1/Om3fvwnkWRSB24830GPjXKr370S365XWxXlsz9Nr24jH8GfgceBblhU/OPuUyzWS6332T1okPlvWIstrwFxXVLqecAQAA"
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/11Qy26DMBD8ltyNG+DUY0PVXCIVgdQeowUW4gJ25F0XIcS/VwbSpD3NjHfG+4hkFD7L/Q4GCsqqDTpVyClnKFsBA50niuV0cGWLLJJab2yF1HSqHO/Pm17FAQhn0UFfVCCnE4xoP9CSMtoH/ug3p0veCjc+C4rPQIRM8sWDUNDLKTMdetuC9/4rm0XTOZRTUutXYCiAFm9iYejQ+mFarI3twTf4tZ2gxRyZlW5o+Qttr8gPtsgMyThb4iyAL6hBJrX+NLY9WuOus0gcselvpsfAv1Jqzbeq0Pq7iGWjnKFRuhGP4XfHV8ezSEe+GP0UyzCS4X73RUoF1mlWPcpsxR9UgZgtuQEAAA=="
    },
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/CDKMetadata/Default"

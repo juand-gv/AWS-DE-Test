@@ -11,7 +11,6 @@ from aws_cdk import (
     CfnOutput
 )
 from constructs import Construct
-import os
 
 class DataPipelineStack(Stack):
     def __init__(self, scope: Construct, id: str, **kwargs):
@@ -29,8 +28,15 @@ class DataPipelineStack(Stack):
             removal_policy=RemovalPolicy.DESTROY,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL
         )
-
+    
         # --- Lambda ---
+        deps_layer = _lambda.LayerVersion(
+            self, "DepsLayer",
+            code=_lambda.Code.from_asset("../python.zip"),
+            compatible_runtimes=[_lambda.Runtime.PYTHON_3_12],
+            description="Prebuilt deps (requests, pyarrow, etc.)"
+        )
+
         lambda_role = iam.Role(self, "LambdaRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com")
         )
@@ -40,7 +46,7 @@ class DataPipelineStack(Stack):
         data_bucket.grant_read_write(lambda_role)
 
         extractor = _lambda.Function(self, "ExtractorFunction",
-            runtime=_lambda.Runtime.PYTHON_3_10,
+            runtime=_lambda.Runtime.PYTHON_3_12,
             handler="lambda_function.handler",
             code=_lambda.Code.from_asset("../lambda/extractor"),
             timeout=Duration.minutes(1),
@@ -49,7 +55,8 @@ class DataPipelineStack(Stack):
                 "API_URL": "https://randomuser.me/api/?results=100",
                 "FILE_FORMAT": "parquet"
             },
-            role=lambda_role
+            role=lambda_role,
+            layers=[deps_layer]
         )
 
         # --- Glue ---
@@ -104,8 +111,14 @@ class DataPipelineStack(Stack):
             permissions=["ALL"]
         )
 
-        lf.CfnPermissions(self, "LambdaPerms",
+        lf.CfnPermissions(self, "CrawlerPermst",
             data_lake_principal={"dataLakePrincipalIdentifier": crawler_role.role_arn},
+            resource={"dataLocationResource": {"s3Resource": data_bucket.bucket_arn}},
+            permissions=["DATA_LOCATION_ACCESS"]
+        )
+
+        lf.CfnPermissions(self, "LambdaPerms",
+            data_lake_principal={"dataLakePrincipalIdentifier": lambda_role.role_arn},
             resource={"dataLocationResource": {"s3Resource": data_bucket.bucket_arn}},
             permissions=["DATA_LOCATION_ACCESS"]
         )

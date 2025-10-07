@@ -11,21 +11,21 @@
     },
     "DataPipelineStack": {
       "type": "aws:cloudformation:stack",
-      "environment": "aws://593695448123/us-east-1",
+      "environment": "aws://339712743071/us-east-1",
       "properties": {
         "templateFile": "DataPipelineStack.template.json",
         "terminationProtection": false,
         "validateOnSynth": false,
-        "assumeRoleArn": "arn:${AWS::Partition}:iam::593695448123:role/cdk-hnb659fds-deploy-role-593695448123-us-east-1",
-        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::593695448123:role/cdk-hnb659fds-cfn-exec-role-593695448123-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-593695448123-us-east-1/018c6ecbcc99db6b8b07f753d9268541f907345cbe501c296137e29618dd744a.json",
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::339712743071:role/cdk-hnb659fds-deploy-role-339712743071-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::339712743071:role/cdk-hnb659fds-cfn-exec-role-339712743071-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-339712743071-us-east-1/3359fac3f002be21a2e2d89d5b3426f241e5d53548662a25703cb856876e6885.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
           "DataPipelineStack.assets"
         ],
         "lookupRole": {
-          "arn": "arn:${AWS::Partition}:iam::593695448123:role/cdk-hnb659fds-lookup-role-593695448123-us-east-1",
+          "arn": "arn:${AWS::Partition}:iam::339712743071:role/cdk-hnb659fds-lookup-role-339712743071-us-east-1",
           "requiresBootstrapStackVersion": 8,
           "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
         }
@@ -86,6 +86,12 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "AthenaResultsAutoDeleteObjectsCustomResourceF81C6624"
+          }
+        ],
+        "/DataPipelineStack/DepsLayer/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DepsLayerA0D7F79A"
           }
         ],
         "/DataPipelineStack/LambdaRole/Resource": [
@@ -152,6 +158,12 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "CrawlerPerms"
+          }
+        ],
+        "/DataPipelineStack/CrawlerPermst": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CrawlerPermst"
           }
         ],
         "/DataPipelineStack/LambdaPerms": [
