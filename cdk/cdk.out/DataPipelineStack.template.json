@@ -3,33 +3,18 @@
   "DataBucketE3889A50": {
    "Type": "AWS::S3::Bucket",
    "Properties": {
-    "BucketEncryption": {
-     "ServerSideEncryptionConfiguration": [
-      {
-       "ServerSideEncryptionByDefault": {
-        "SSEAlgorithm": "AES256"
-       }
-      }
-     ]
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
     },
-    "BucketName": "datapipelinestack-data-bucket",
     "Tags": [
      {
       "Key": "aws-cdk:auto-delete-objects",
       "Value": "true"
-     },
-     {
-      "Key": "owner",
-      "Value": "morbid@example.com"
-     },
-     {
-      "Key": "project",
-      "Value": "aws-de-test"
      }
-    ],
-    "VersioningConfiguration": {
-     "Status": "Enabled"
-    }
+    ]
    },
    "UpdateReplacePolicy": "Delete",
    "DeletionPolicy": "Delete",
@@ -143,7 +128,7 @@
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-593695448123-us-east-1",
+     "S3Bucket": "cdk-hnb659fds-assets-339712743071-us-east-1",
      "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
     },
     "Timeout": 900,
@@ -178,45 +163,33 @@
     "aws:asset:property": "Code"
    }
   },
-  "AthenaResultsBucket879938FA": {
+  "AthenaResults99A60126": {
    "Type": "AWS::S3::Bucket",
    "Properties": {
-    "BucketEncryption": {
-     "ServerSideEncryptionConfiguration": [
-      {
-       "ServerSideEncryptionByDefault": {
-        "SSEAlgorithm": "AES256"
-       }
-      }
-     ]
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
     },
-    "BucketName": "datapipelinestack-athenaresults-bucket",
     "Tags": [
      {
       "Key": "aws-cdk:auto-delete-objects",
       "Value": "true"
-     },
-     {
-      "Key": "owner",
-      "Value": "morbid@example.com"
-     },
-     {
-      "Key": "project",
-      "Value": "aws-de-test"
      }
     ]
    },
    "UpdateReplacePolicy": "Delete",
    "DeletionPolicy": "Delete",
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/AthenaResultsBucket/Resource"
+    "aws:cdk:path": "DataPipelineStack/AthenaResults/Resource"
    }
   },
-  "AthenaResultsBucketPolicyD63DEF63": {
+  "AthenaResultsPolicyC1D66A19": {
    "Type": "AWS::S3::BucketPolicy",
    "Properties": {
     "Bucket": {
-     "Ref": "AthenaResultsBucket879938FA"
+     "Ref": "AthenaResults99A60126"
     },
     "PolicyDocument": {
      "Statement": [
@@ -239,7 +212,7 @@
        "Resource": [
         {
          "Fn::GetAtt": [
-          "AthenaResultsBucket879938FA",
+          "AthenaResults99A60126",
           "Arn"
          ]
         },
@@ -249,7 +222,7 @@
           [
            {
             "Fn::GetAtt": [
-             "AthenaResultsBucket879938FA",
+             "AthenaResults99A60126",
              "Arn"
             ]
            },
@@ -264,10 +237,10 @@
     }
    },
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/AthenaResultsBucket/Policy/Resource"
+    "aws:cdk:path": "DataPipelineStack/AthenaResults/Policy/Resource"
    }
   },
-  "AthenaResultsBucketAutoDeleteObjectsCustomResourceD2206C34": {
+  "AthenaResultsAutoDeleteObjectsCustomResourceF81C6624": {
    "Type": "Custom::S3AutoDeleteObjects",
    "Properties": {
     "ServiceToken": {
@@ -277,19 +250,38 @@
      ]
     },
     "BucketName": {
-     "Ref": "AthenaResultsBucket879938FA"
+     "Ref": "AthenaResults99A60126"
     }
    },
    "DependsOn": [
-    "AthenaResultsBucketPolicyD63DEF63"
+    "AthenaResultsPolicyC1D66A19"
    ],
    "UpdateReplacePolicy": "Delete",
    "DeletionPolicy": "Delete",
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/AthenaResultsBucket/AutoDeleteObjectsCustomResource/Default"
+    "aws:cdk:path": "DataPipelineStack/AthenaResults/AutoDeleteObjectsCustomResource/Default"
    }
   },
-  "LambdaExecutionRoleD5C26073": {
+  "DepsLayerA0D7F79A": {
+   "Type": "AWS::Lambda::LayerVersion",
+   "Properties": {
+    "CompatibleRuntimes": [
+     "python3.12"
+    ],
+    "Content": {
+     "S3Bucket": "cdk-hnb659fds-assets-339712743071-us-east-1",
+     "S3Key": "81ddcad0c68dbe9c920d77ca3fb4155a7cdd9033a2aa708525b133f0b003e9b6.zip"
+    },
+    "Description": "Prebuilt deps (requests, pyarrow, etc.)"
+   },
+   "Metadata": {
+    "aws:cdk:path": "DataPipelineStack/DepsLayer/Resource",
+    "aws:asset:path": "asset.81ddcad0c68dbe9c920d77ca3fb4155a7cdd9033a2aa708525b133f0b003e9b6.zip",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Content"
+   }
+  },
+  "LambdaRole3A44B857": {
    "Type": "AWS::IAM::Role",
    "Properties": {
     "AssumeRolePolicyDocument": {
@@ -317,24 +309,13 @@
        ]
       ]
      }
-    ],
-    "RoleName": "datapipelinestack-ExtractorLambdaRole",
-    "Tags": [
-     {
-      "Key": "owner",
-      "Value": "morbid@example.com"
-     },
-     {
-      "Key": "project",
-      "Value": "aws-de-test"
-     }
     ]
    },
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/LambdaExecutionRole/Resource"
+    "aws:cdk:path": "DataPipelineStack/LambdaRole/Resource"
    }
   },
-  "LambdaExecutionRoleDefaultPolicy6D69732F": {
+  "LambdaRoleDefaultPolicy75625A82": {
    "Type": "AWS::IAM::Policy",
    "Properties": {
     "PolicyDocument": {
@@ -379,76 +360,72 @@
      ],
      "Version": "2012-10-17"
     },
-    "PolicyName": "LambdaExecutionRoleDefaultPolicy6D69732F",
+    "PolicyName": "LambdaRoleDefaultPolicy75625A82",
     "Roles": [
      {
-      "Ref": "LambdaExecutionRoleD5C26073"
+      "Ref": "LambdaRole3A44B857"
      }
     ]
    },
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/LambdaExecutionRole/DefaultPolicy/Resource"
+    "aws:cdk:path": "DataPipelineStack/LambdaRole/DefaultPolicy/Resource"
    }
   },
-  "ExtractorLambdaA121D062": {
+  "ExtractorFunctionBA5D720D": {
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
-     "ZipFile": "def handler(event, context):\n  return {'statusCode':200, 'body':'no code'}"
+     "S3Bucket": "cdk-hnb659fds-assets-339712743071-us-east-1",
+     "S3Key": "9139a3bf5a007bc516f3448f42a8050cd9456943927e23b4fe6d3a62223e3cd3.zip"
     },
     "Environment": {
      "Variables": {
       "BUCKET": {
        "Ref": "DataBucketE3889A50"
       },
-      "PREFIX": "raw/",
       "API_URL": "https://randomuser.me/api/?results=100",
       "FILE_FORMAT": "parquet"
      }
     },
-    "FunctionName": "datapipelinestack-ExtractorLambda",
     "Handler": "lambda_function.handler",
-    "MemorySize": 512,
+    "Layers": [
+     {
+      "Ref": "DepsLayerA0D7F79A"
+     }
+    ],
     "Role": {
      "Fn::GetAtt": [
-      "LambdaExecutionRoleD5C26073",
+      "LambdaRole3A44B857",
       "Arn"
      ]
     },
-    "Runtime": "python3.10",
-    "Tags": [
-     {
-      "Key": "owner",
-      "Value": "morbid@example.com"
-     },
-     {
-      "Key": "project",
-      "Value": "aws-de-test"
-     }
-    ],
-    "Timeout": 120
+    "Runtime": "python3.12",
+    "Timeout": 60
    },
    "DependsOn": [
-    "LambdaExecutionRoleDefaultPolicy6D69732F",
-    "LambdaExecutionRoleD5C26073"
+    "LambdaRoleDefaultPolicy75625A82",
+    "LambdaRole3A44B857"
    ],
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/ExtractorLambda/Resource"
+    "aws:cdk:path": "DataPipelineStack/ExtractorFunction/Resource",
+    "aws:asset:path": "asset.9139a3bf5a007bc516f3448f42a8050cd9456943927e23b4fe6d3a62223e3cd3",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
    }
   },
-  "GlueDatabase": {
+  "GlueDB": {
    "Type": "AWS::Glue::Database",
    "Properties": {
-    "CatalogId": "593695448123",
+    "CatalogId": "339712743071",
     "DatabaseInput": {
      "Name": "users_db"
     }
    },
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/GlueDatabase"
+    "aws:cdk:path": "DataPipelineStack/GlueDB"
    }
   },
-  "GlueCrawlerRole4AA4B387": {
+  "CrawlerRoleA9495AEE": {
    "Type": "AWS::IAM::Role",
    "Properties": {
     "AssumeRolePolicyDocument": {
@@ -472,28 +449,17 @@
         {
          "Ref": "AWS::Partition"
         },
-        ":iam::aws:policy/service-role/AWSGlueServiceRole"
+        ":iam::aws:policy/AdministratorAccess"
        ]
       ]
-     }
-    ],
-    "RoleName": "datapipelinestack-GlueCrawlerRole",
-    "Tags": [
-     {
-      "Key": "owner",
-      "Value": "morbid@example.com"
-     },
-     {
-      "Key": "project",
-      "Value": "aws-de-test"
      }
     ]
    },
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/GlueCrawlerRole/Resource"
+    "aws:cdk:path": "DataPipelineStack/CrawlerRole/Resource"
    }
   },
-  "GlueCrawlerRoleDefaultPolicy44958AC9": {
+  "CrawlerRoleDefaultPolicy145A4322": {
    "Type": "AWS::IAM::Policy",
    "Properties": {
     "PolicyDocument": {
@@ -531,292 +497,42 @@
      ],
      "Version": "2012-10-17"
     },
-    "PolicyName": "GlueCrawlerRoleDefaultPolicy44958AC9",
+    "PolicyName": "CrawlerRoleDefaultPolicy145A4322",
     "Roles": [
      {
-      "Ref": "GlueCrawlerRole4AA4B387"
+      "Ref": "CrawlerRoleA9495AEE"
      }
     ]
    },
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/GlueCrawlerRole/DefaultPolicy/Resource"
+    "aws:cdk:path": "DataPipelineStack/CrawlerRole/DefaultPolicy/Resource"
    }
   },
-  "AnalyticsRoleCC82C833": {
-   "Type": "AWS::IAM::Role",
+  "DataPipelineDataLakeSettings": {
+   "Type": "AWS::LakeFormation::DataLakeSettings",
    "Properties": {
-    "AssumeRolePolicyDocument": {
-     "Statement": [
-      {
-       "Action": "sts:AssumeRole",
-       "Effect": "Allow",
-       "Principal": {
-        "Service": "athena.amazonaws.com"
-       }
-      }
-     ],
-     "Version": "2012-10-17"
-    },
-    "Description": "Role representing analytics users / Athena queries for Lake Formation permissions",
-    "RoleName": "datapipelinestack-AnalyticsRole",
-    "Tags": [
+    "Admins": [
      {
-      "Key": "owner",
-      "Value": "morbid@example.com"
-     },
-     {
-      "Key": "project",
-      "Value": "aws-de-test"
-     }
-    ]
-   },
-   "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/AnalyticsRole/Resource"
-   }
-  },
-  "RegisterLFLocationCustom761D3290": {
-   "Type": "Custom::AWS",
-   "Properties": {
-    "ServiceToken": {
-     "Fn::GetAtt": [
-      "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
-      "Arn"
-     ]
-    },
-    "Create": {
-     "Fn::Join": [
-      "",
-      [
-       "{\"action\":\"registerResource\",\"service\":\"LakeFormation\",\"parameters\":{\"ResourceArn\":\"arn:aws:s3:::",
-       {
-        "Ref": "DataBucketE3889A50"
-       },
-       "\",\"RoleArn\":\"",
-       {
-        "Fn::GetAtt": [
-         "GlueCrawlerRole4AA4B387",
-         "Arn"
-        ]
-       },
-       "\",\"UseServiceLinkedRole\":false},\"physicalResourceId\":{\"id\":\"lf-register-",
-       {
-        "Ref": "DataBucketE3889A50"
-       },
-       "\"}}"
-      ]
-     ]
-    },
-    "Delete": {
-     "Fn::Join": [
-      "",
-      [
-       "{\"action\":\"deregisterResource\",\"service\":\"LakeFormation\",\"parameters\":{\"ResourceArn\":\"arn:aws:s3:::",
-       {
-        "Ref": "DataBucketE3889A50"
-       },
-       "\"}}"
-      ]
-     ]
-    },
-    "InstallLatestAwsSdk": true
-   },
-   "DependsOn": [
-    "DataBucketAutoDeleteObjectsCustomResource9FB51BF3",
-    "DataBucketPolicy3231C704",
-    "DataBucketE3889A50",
-    "GlueCrawlerRoleDefaultPolicy44958AC9",
-    "GlueCrawlerRole4AA4B387",
-    "RegisterLFLocationCustomCustomResourcePolicy6987D61D"
-   ],
-   "UpdateReplacePolicy": "Delete",
-   "DeletionPolicy": "Delete",
-   "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/RegisterLFLocationCustom/Resource/Default"
-   }
-  },
-  "RegisterLFLocationCustomCustomResourcePolicy6987D61D": {
-   "Type": "AWS::IAM::Policy",
-   "Properties": {
-    "PolicyDocument": {
-     "Statement": [
-      {
-       "Action": [
-        "lakeformation:RegisterResource",
-        "lakeformation:DeregisterResource",
-        "lakeformation:PutDataLakeSettings",
-        "iam:PassRole"
-       ],
-       "Effect": "Allow",
-       "Resource": "*"
-      }
-     ],
-     "Version": "2012-10-17"
-    },
-    "PolicyName": "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
-    "Roles": [
-     {
-      "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2"
-     }
-    ]
-   },
-   "DependsOn": [
-    "DataBucketAutoDeleteObjectsCustomResource9FB51BF3",
-    "DataBucketPolicy3231C704",
-    "DataBucketE3889A50",
-    "GlueCrawlerRoleDefaultPolicy44958AC9",
-    "GlueCrawlerRole4AA4B387"
-   ],
-   "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/RegisterLFLocationCustom/CustomResourcePolicy/Resource"
-   }
-  },
-  "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2": {
-   "Type": "AWS::IAM::Role",
-   "Properties": {
-    "AssumeRolePolicyDocument": {
-     "Statement": [
-      {
-       "Action": "sts:AssumeRole",
-       "Effect": "Allow",
-       "Principal": {
-        "Service": "lambda.amazonaws.com"
-       }
-      }
-     ],
-     "Version": "2012-10-17"
-    },
-    "ManagedPolicyArns": [
-     {
-      "Fn::Join": [
-       "",
-       [
-        "arn:",
-        {
-         "Ref": "AWS::Partition"
-        },
-        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      "DataLakePrincipalIdentifier": {
+       "Fn::GetAtt": [
+        "CrawlerRoleA9495AEE",
+        "Arn"
        ]
-      ]
-     }
-    ],
-    "Tags": [
-     {
-      "Key": "owner",
-      "Value": "morbid@example.com"
-     },
-     {
-      "Key": "project",
-      "Value": "aws-de-test"
+      }
      }
     ]
    },
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/AWS679f53fac002430cb0da5b7982bd2287/ServiceRole/Resource"
+    "aws:cdk:path": "DataPipelineStack/DataPipelineDataLakeSettings"
    }
   },
-  "AWS679f53fac002430cb0da5b7982bd22872D164C4C": {
-   "Type": "AWS::Lambda::Function",
-   "Properties": {
-    "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-593695448123-us-east-1",
-     "S3Key": "34a66902956b031404ef497526f619b900363fe7fd65ff02b1de4c30fe10c034.zip"
-    },
-    "Handler": "index.handler",
-    "Role": {
-     "Fn::GetAtt": [
-      "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
-      "Arn"
-     ]
-    },
-    "Runtime": "nodejs22.x",
-    "Tags": [
-     {
-      "Key": "owner",
-      "Value": "morbid@example.com"
-     },
-     {
-      "Key": "project",
-      "Value": "aws-de-test"
-     }
-    ],
-    "Timeout": 300
-   },
-   "DependsOn": [
-    "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2"
-   ],
-   "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/AWS679f53fac002430cb0da5b7982bd2287/Resource",
-    "aws:asset:path": "asset.34a66902956b031404ef497526f619b900363fe7fd65ff02b1de4c30fe10c034",
-    "aws:asset:is-bundled": false,
-    "aws:asset:property": "Code"
-   }
-  },
-  "CrawlerDataLocationPermissions": {
+  "GlueDBPerms": {
    "Type": "AWS::LakeFormation::Permissions",
    "Properties": {
     "DataLakePrincipal": {
      "DataLakePrincipalIdentifier": {
       "Fn::GetAtt": [
-       "GlueCrawlerRole4AA4B387",
-       "Arn"
-      ]
-     }
-    },
-    "Permissions": [
-     "DATA_LOCATION_ACCESS"
-    ],
-    "Resource": {
-     "DataLocationResource": {
-      "CatalogId": "593695448123"
-     }
-    }
-   },
-   "DependsOn": [
-    "GlueCrawlerRoleDefaultPolicy44958AC9",
-    "GlueCrawlerRole4AA4B387",
-    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
-    "RegisterLFLocationCustom761D3290"
-   ],
-   "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/CrawlerDataLocationPermissions"
-   }
-  },
-  "AnalyticsDataLocationPermissions": {
-   "Type": "AWS::LakeFormation::Permissions",
-   "Properties": {
-    "DataLakePrincipal": {
-     "DataLakePrincipalIdentifier": {
-      "Fn::GetAtt": [
-       "AnalyticsRoleCC82C833",
-       "Arn"
-      ]
-     }
-    },
-    "Permissions": [
-     "DATA_LOCATION_ACCESS"
-    ],
-    "Resource": {
-     "DataLocationResource": {
-      "CatalogId": "593695448123"
-     }
-    }
-   },
-   "DependsOn": [
-    "AnalyticsRoleCC82C833",
-    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
-    "RegisterLFLocationCustom761D3290"
-   ],
-   "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/AnalyticsDataLocationPermissions"
-   }
-  },
-  "GlueCrawlerLFPermissions": {
-   "Type": "AWS::LakeFormation::Permissions",
-   "Properties": {
-    "DataLakePrincipal": {
-     "DataLakePrincipalIdentifier": {
-      "Fn::GetAtt": [
-       "GlueCrawlerRole4AA4B387",
+       "CrawlerRoleA9495AEE",
        "Arn"
       ]
      }
@@ -828,141 +544,29 @@
     ],
     "Resource": {
      "DatabaseResource": {
-      "CatalogId": "593695448123",
-      "Name": {
-       "Ref": "GlueDatabase"
-      }
+      "Name": "users_db"
      }
     }
    },
-   "DependsOn": [
-    "GlueCrawlerRoleDefaultPolicy44958AC9",
-    "GlueCrawlerRole4AA4B387",
-    "GlueDatabase",
-    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
-    "RegisterLFLocationCustom761D3290"
-   ],
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/GlueCrawlerLFPermissions"
-   }
-  },
-  "LambdaLFPermissions": {
-   "Type": "AWS::LakeFormation::Permissions",
-   "Properties": {
-    "DataLakePrincipal": {
-     "DataLakePrincipalIdentifier": {
-      "Fn::GetAtt": [
-       "LambdaExecutionRoleD5C26073",
-       "Arn"
-      ]
-     }
-    },
-    "Permissions": [
-     "DESCRIBE"
-    ],
-    "Resource": {
-     "DatabaseResource": {
-      "CatalogId": "593695448123",
-      "Name": {
-       "Ref": "GlueDatabase"
-      }
-     }
-    }
-   },
-   "DependsOn": [
-    "GlueDatabase",
-    "LambdaExecutionRoleDefaultPolicy6D69732F",
-    "LambdaExecutionRoleD5C26073",
-    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
-    "RegisterLFLocationCustom761D3290"
-   ],
-   "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/LambdaLFPermissions"
-   }
-  },
-  "AnalyticsLFDatabasePermissions": {
-   "Type": "AWS::LakeFormation::Permissions",
-   "Properties": {
-    "DataLakePrincipal": {
-     "DataLakePrincipalIdentifier": {
-      "Fn::GetAtt": [
-       "AnalyticsRoleCC82C833",
-       "Arn"
-      ]
-     }
-    },
-    "Permissions": [
-     "DESCRIBE"
-    ],
-    "Resource": {
-     "DatabaseResource": {
-      "CatalogId": "593695448123",
-      "Name": {
-       "Ref": "GlueDatabase"
-      }
-     }
-    }
-   },
-   "DependsOn": [
-    "AnalyticsRoleCC82C833",
-    "GlueDatabase",
-    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
-    "RegisterLFLocationCustom761D3290"
-   ],
-   "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/AnalyticsLFDatabasePermissions"
-   }
-  },
-  "AnalyticsLFTablePermissions": {
-   "Type": "AWS::LakeFormation::Permissions",
-   "Properties": {
-    "DataLakePrincipal": {
-     "DataLakePrincipalIdentifier": {
-      "Fn::GetAtt": [
-       "AnalyticsRoleCC82C833",
-       "Arn"
-      ]
-     }
-    },
-    "Permissions": [
-     "SELECT",
-     "DESCRIBE"
-    ],
-    "Resource": {
-     "TableResource": {
-      "CatalogId": "593695448123",
-      "DatabaseName": {
-       "Ref": "GlueDatabase"
-      },
-      "TableWildcard": {}
-     }
-    }
-   },
-   "DependsOn": [
-    "AnalyticsLFDatabasePermissions",
-    "RegisterLFLocationCustomCustomResourcePolicy6987D61D",
-    "RegisterLFLocationCustom761D3290"
-   ],
-   "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/AnalyticsLFTablePermissions"
+    "aws:cdk:path": "DataPipelineStack/GlueDBPerms"
    }
   },
   "UsersCrawler": {
    "Type": "AWS::Glue::Crawler",
    "Properties": {
     "DatabaseName": {
-     "Ref": "GlueDatabase"
+     "Ref": "GlueDB"
     },
-    "Name": "datapipelinestack-UsersCrawler",
     "Role": {
      "Fn::GetAtt": [
-      "GlueCrawlerRole4AA4B387",
+      "CrawlerRoleA9495AEE",
       "Arn"
      ]
     },
-    "Tags": {
-     "owner": "morbid@example.com",
-     "project": "aws-de-test"
+    "SchemaChangePolicy": {
+     "DeleteBehavior": "LOG",
+     "UpdateBehavior": "UPDATE_IN_DATABASE"
     },
     "Targets": {
      "S3Targets": [
@@ -975,7 +579,7 @@
           {
            "Ref": "DataBucketE3889A50"
           },
-          "/raw/"
+          "/"
          ]
         ]
        }
@@ -983,28 +587,117 @@
      ]
     }
    },
-   "DependsOn": [
-    "CrawlerDataLocationPermissions",
-    "GlueDatabase"
-   ],
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/UsersCrawler"
    }
   },
-  "AthenaWorkgroup": {
+  "LFDataLocation": {
+   "Type": "AWS::LakeFormation::Resource",
+   "Properties": {
+    "ResourceArn": {
+     "Fn::GetAtt": [
+      "DataBucketE3889A50",
+      "Arn"
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "CrawlerRoleA9495AEE",
+      "Arn"
+     ]
+    },
+    "UseServiceLinkedRole": false
+   },
+   "Metadata": {
+    "aws:cdk:path": "DataPipelineStack/LFDataLocation"
+   }
+  },
+  "CrawlerPerms": {
+   "Type": "AWS::LakeFormation::Permissions",
+   "Properties": {
+    "DataLakePrincipal": {
+     "DataLakePrincipalIdentifier": {
+      "Fn::GetAtt": [
+       "CrawlerRoleA9495AEE",
+       "Arn"
+      ]
+     }
+    },
+    "Permissions": [
+     "ALL"
+    ],
+    "Resource": {
+     "DatabaseResource": {
+      "Name": "users_db"
+     }
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DataPipelineStack/CrawlerPerms"
+   }
+  },
+  "CrawlerPermst": {
+   "Type": "AWS::LakeFormation::Permissions",
+   "Properties": {
+    "DataLakePrincipal": {
+     "DataLakePrincipalIdentifier": {
+      "Fn::GetAtt": [
+       "CrawlerRoleA9495AEE",
+       "Arn"
+      ]
+     }
+    },
+    "Permissions": [
+     "DATA_LOCATION_ACCESS"
+    ],
+    "Resource": {
+     "DataLocationResource": {
+      "S3Resource": {
+       "Fn::GetAtt": [
+        "DataBucketE3889A50",
+        "Arn"
+       ]
+      }
+     }
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DataPipelineStack/CrawlerPermst"
+   }
+  },
+  "LambdaPerms": {
+   "Type": "AWS::LakeFormation::Permissions",
+   "Properties": {
+    "DataLakePrincipal": {
+     "DataLakePrincipalIdentifier": {
+      "Fn::GetAtt": [
+       "LambdaRole3A44B857",
+       "Arn"
+      ]
+     }
+    },
+    "Permissions": [
+     "DATA_LOCATION_ACCESS"
+    ],
+    "Resource": {
+     "DataLocationResource": {
+      "S3Resource": {
+       "Fn::GetAtt": [
+        "DataBucketE3889A50",
+        "Arn"
+       ]
+      }
+     }
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DataPipelineStack/LambdaPerms"
+   }
+  },
+  "AthenaWG": {
    "Type": "AWS::Athena::WorkGroup",
    "Properties": {
-    "Name": "datapipelinestack-users-workgroup",
-    "Tags": [
-     {
-      "Key": "owner",
-      "Value": "morbid@example.com"
-     },
-     {
-      "Key": "project",
-      "Value": "aws-de-test"
-     }
-    ],
+    "Name": "users_wg",
     "WorkGroupConfiguration": {
      "ResultConfiguration": {
       "OutputLocation": {
@@ -1013,28 +706,23 @@
         [
          "s3://",
          {
-          "Ref": "AthenaResultsBucket879938FA"
+          "Ref": "AthenaResults99A60126"
          },
-         "/athena-results/"
+         "/results/"
         ]
        ]
       }
      }
     }
    },
-   "DependsOn": [
-    "AthenaResultsBucketAutoDeleteObjectsCustomResourceD2206C34",
-    "AthenaResultsBucketPolicyD63DEF63",
-    "AthenaResultsBucket879938FA"
-   ],
    "Metadata": {
-    "aws:cdk:path": "DataPipelineStack/AthenaWorkgroup"
+    "aws:cdk:path": "DataPipelineStack/AthenaWG"
    }
   },
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/2VPS2+DMAz+Lb2nXoHTji3TdlxVDjtWbmpoRkiq2BmqEP99CiCqaafvYX9+5JBnr7DbYM9bfW231lxgqAR1q7Dn88AFDIeoWxJV1m5hMxy9NfrxtBc9iwMyjcpgB8PJW0pdEz5DMxuVxe5yRRjeo9NivEu1lVfGNZbEr86oGhsJhrJ2byh4QZ5mlwF7S2FUXJyRmYRhn0BZbKn2ocMUhrSWQmeYjXesUG7kMLlfPrQfwcf7qMrI4rsTsY9Bz4ev/E/pGPyPuVJIr6ppWyXYGNeoNaCnwDksmmHf8//5n1HuUUZ1fMjNu5cCshyy3eabjdmG6MR0BKcZfwEGmKHErwEAAA=="
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/11Qy26DMBD8ltyNG+DUY0PVXCIVgdQeowUW4gJ25F0XIcS/VwbSpD3NjHfG+4hkFD7L/Q4GCsqqDTpVyClnKFsBA50niuV0cGWLLJJab2yF1HSqHO/Pm17FAQhn0UFfVCCnE4xoP9CSMtoH/ug3p0veCjc+C4rPQIRM8sWDUNDLKTMdetuC9/4rm0XTOZRTUutXYCiAFm9iYejQ+mFarI3twTf4tZ2gxRyZlW5o+Qttr8gPtsgMyThb4iyAL6hBJrX+NLY9WuOus0gcselvpsfAv1Jqzbeq0Pq7iGWjnKFRuhGP4XfHV8ezSEe+GP0UyzCS4X73RUoF1mlWPcpsxR9UgZgtuQEAAA=="
    },
    "Metadata": {
     "aws:cdk:path": "DataPipelineStack/CDKMetadata/Default"
@@ -1042,37 +730,17 @@
   }
  },
  "Outputs": {
-  "DataBucketName": {
+  "DataBucketNameOutput": {
    "Value": {
     "Ref": "DataBucketE3889A50"
    }
   },
-  "GlueDatabaseName": {
-   "Value": {
-    "Ref": "GlueDatabase"
-   }
+  "GlueDBNameOutput": {
+   "Value": "users_db"
   },
-  "AthenaResultsBucketName": {
+  "LambdaNameOutput": {
    "Value": {
-    "Ref": "AthenaResultsBucket879938FA"
-   }
-  },
-  "ExtractorLambdaName": {
-   "Value": {
-    "Ref": "ExtractorLambdaA121D062"
-   }
-  },
-  "GlueCrawlerName": {
-   "Value": {
-    "Ref": "UsersCrawler"
-   }
-  },
-  "AnalyticsRoleArn": {
-   "Value": {
-    "Fn::GetAtt": [
-     "AnalyticsRoleCC82C833",
-     "Arn"
-    ]
+    "Ref": "ExtractorFunctionBA5D720D"
    }
   }
  },
